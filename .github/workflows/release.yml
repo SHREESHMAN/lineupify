@@ -70,7 +70,8 @@ jobs:
       - name: GitHub release with the .mcpb attached
         run: |
           tag="${{ steps.meta.outputs.tag }}"
-          if ! git rev-parse "$tag" >/dev/null 2>&1; then git tag "$tag" && git push origin "$tag"; fi
+          # A workflow_dispatch checkout is shallow and has no tags, so ask the remote.
+          if ! git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then git tag "$tag" && git push origin "$tag"; fi
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" build/lineupify-*.mcpb --clobber
           else
