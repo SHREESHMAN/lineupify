@@ -54,5 +54,7 @@ export function describeFilters(opts: Partial<DraftOptions>): string[] {
   if (b && (b.min !== undefined || b.max !== undefined)) out.push(`bpm ${b.min ?? '…'}-${b.max ?? '…'}${opts.strictBpm ? ' (strict)' : ''}`);
   if (opts.skipCovers) out.push('covers skipped');
   if (opts.excludeExplicit) out.push('clean only');
+  if (opts.excludeSeedSongs) out.push('seed songs excluded');
+  if (opts.excludeSeedArtists) out.push('seed artists excluded');
   return out;
 }

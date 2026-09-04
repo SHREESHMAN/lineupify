@@ -44,6 +44,28 @@ export async function topTracks(apiKey: string, artist: string, limit = 30, sign
     }));
 }
 
+export interface LfmSimilarTrack {
+  title: string;
+  artist: string;
+  /** 0..1 similarity from co-listening. */
+  match: number;
+  playcount?: number;
+  mbid?: string;
+}
+
+/** track.getSimilar: songs listened to together with this one. autocorrect is on so a slightly off title still resolves. */
+export async function similarTracks(apiKey: string, artist: string, track: string, limit = 50, signal?: AbortSignal): Promise<LfmSimilarTrack[]> {
+  const url =
+    `${BASE}?method=track.getsimilar&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(track)}` +
+    `&autocorrect=1&limit=${Math.max(1, Math.min(250, limit))}&api_key=${encodeURIComponent(apiKey)}&format=json`;
+  const res = await http(url, { signal, timeoutMs: 12_000, attempts: 3 });
+  const body = res.json<{ similartracks?: { track?: { name: string; match?: number | string; playcount?: number | string; mbid?: string; artist?: { name: string } }[] }; error?: number }>();
+  if (!body || body.error) return [];
+  return (body.similartracks?.track ?? [])
+    .filter((t) => t.name && t.artist?.name && !JUNK_TITLE.test(t.name.trim()))
+    .map((t) => ({ title: t.name, artist: t.artist!.name, match: Number(t.match ?? 0), playcount: t.playcount !== undefined ? Number(t.playcount) : undefined, mbid: t.mbid || undefined }));
+}
+
 export async function validateKey(apiKey: string): Promise<boolean> {
   const url = `${BASE}?method=artist.getinfo&artist=Radiohead&api_key=${encodeURIComponent(apiKey)}&format=json`;
   try {

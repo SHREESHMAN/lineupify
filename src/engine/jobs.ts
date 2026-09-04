@@ -13,7 +13,7 @@ import { flushAllCaches } from '../infra/cache.js';
 import { fold } from './normalize.js';
 import { applyOrder, hasPendingWork, loadDraft, makeTrackId, saveDraft, artistKeyFor } from './draft.js';
 import { collabParts, isAbort, resolveArtist, resolveOrSplit, type ResolveContext } from './resolve.js';
-import { matchCandidate } from './match.js';
+import { lookupTrack, matchCandidate } from './match.js';
 import { applyStepwiseCap, songKey, targetFor, trimToDuration } from './select.js';
 import { bpmAccepts, trackYear, yearAccepts } from './filters.js';
 import { expandSeed, seedLabel } from './seeds.js';
@@ -265,25 +265,60 @@ async function expandSeeds(job: Job, settings: JobSettings, signal: AbortSignal)
   const { draft } = job;
   const pending = (draft.seeds ?? []).filter((s) => s.status === 'pending');
   if (!pending.length) return;
-  const ctx = { lastfmApiKey: settings.lastfmApiKey, signal };
+  const provider = draft.provider ?? 'spotify';
+  const ctx = {
+    lastfmApiKey: settings.lastfmApiKey,
+    signal,
+    provider,
+    lookupTrack: (ref: string) => lookupTrack(ref, signal, provider),
+    excludeSeedSongs: draft.options.excludeSeedSongs,
+    excludeSeedArtists: draft.options.excludeSeedArtists,
+    tracksPerArtist: draft.options.tracksPerArtist,
+  };
   const anyTier = draft.artists.some((a) => a.tier !== 'flat');
   const excluded = new Set(draft.options.excludeArtists.map(fold));
   for (const seed of pending) {
     if (signal.aborted) throw new Error('aborted');
     try {
       const r = await expandSeed(seed, ctx);
+      if (r.seedSongs?.length) seed.label = r.seedSongs.map((s) => `${clean(s.artist, 24)} – ${clean(s.title, 30)}`).join(', ');
       const keys = new Set(draft.artists.map((a) => a.key));
       const existing = new Set(draft.artists.map((a) => fold(a.name)));
       const tier: Tier = seed.tier ?? (anyTier ? 'undercard' : 'flat');
       let added = 0;
+      if (r.seedSongs?.length && draft.options.excludeSeedSongs) {
+        const ex = draft.excludeTracks ?? { uris: [], isrcs: [], songKeys: [], resolved: !draft.options.excludeTracksFrom?.length };
+        for (const s of r.seedSongs) {
+          if (s.uri && !ex.uris.includes(s.uri)) ex.uris.push(s.uri);
+          if (s.isrc && !ex.isrcs.includes(s.isrc)) ex.isrcs.push(s.isrc);
+          if (!ex.songKeys.includes(s.key)) ex.songKeys.push(s.key);
+        }
+        ex.note = [ex.note, `${r.seedSongs.length} seed song${r.seedSongs.length === 1 ? '' : 's'}`].filter(Boolean).join('; ');
+        draft.excludeTracks = ex;
+      }
       for (const a of r.artists) {
         const f = fold(a.name);
-        if (!f || existing.has(f) || excluded.has(f)) continue;
+        if (!f || excluded.has(f)) continue;
+        const pinned = r.pinned?.[f];
+        if (existing.has(f)) {
+          // Same artist again (typed, or from another seed): add the pinned songs it does not have yet.
+          const cur = draft.artists.find((x) => fold(x.name) === f);
+          if (cur && pinned?.length && cur.status === 'pending') {
+            const have = new Set((cur.pinned ?? []).map((c) => songKey(c.titleShort || c.title, c.leadArtist)));
+            const fresh = pinned.filter((c) => !have.has(songKey(c.titleShort || c.title, c.leadArtist)));
+            if (fresh.length) {
+              cur.pinned = [...(cur.pinned ?? []), ...fresh];
+              cur.target = draft.options.tracksPerArtist ?? cur.pinned.length;
+            }
+          }
+          continue;
+        }
         if (draft.artists.length >= MAX_ARTISTS) break;
         const key = artistKeyFor(a.name, keys);
         keys.add(key);
         existing.add(f);
-        draft.artists.push({ key, name: a.name, tier, status: 'pending', target: targetFor(tier, draft.options), origin: seedLabel(seed) });
+        const target = pinned?.length ? (draft.options.tracksPerArtist ?? pinned.length) : targetFor(tier, draft.options);
+        draft.artists.push({ key, name: a.name, tier, status: 'pending', target, origin: seedLabel(seed), ...(pinned?.length ? { pinned } : {}) });
         if (a.deezerId && !(await artistCache.get(f))) {
           await artistCache.set(f, { name: a.name, source: 'deezer', deezerId: a.deezerId, nbFan: a.nbFan, confidence: 'high' });
         }
@@ -361,7 +396,7 @@ async function applyDiscoveryOnly(job: Job, signal: AbortSignal): Promise<void> 
  * Deezer search); split only when the whole fails and every part resolves.
  */
 async function expandCollabs(draft: Draft, rctx: ResolveContext): Promise<void> {
-  const pending = draft.artists.filter((a) => a.status === 'pending');
+  const pending = draft.artists.filter((a) => a.status === 'pending' && !a.pinned?.length);
   for (const a of pending) {
     const parts = collabParts(a.name);
     if (!parts) continue;
@@ -409,6 +444,14 @@ function accepts(pass: Pass, c: Candidate): boolean {
 async function processArtist(draft: Draft, a: DraftArtist, pass: Pass, rctx: ResolveContext, mctx: { userId: string; signal: AbortSignal; wantBpm?: boolean; provider?: Provider }, seen: Seen): Promise<void> {
   const have = () => draft.tracks.filter((t) => t.artistKey === a.key).length;
   let candidates = seen.candidates.get(a.key);
+  if (!candidates && a.pinned?.length) {
+    // similar_songs: these exact songs, not the artist's top tracks.
+    candidates = a.pinned.map((c) => ({ ...c }));
+    a.resolved = a.resolved ?? { name: a.name, source: candidates[0]!.source, confidence: 'high' };
+    a.reason = undefined;
+    seen.candidates.set(a.key, candidates);
+    a.status = 'resolved';
+  }
   if (!candidates) {
     if (a.target - have() <= 0) {
       a.status = a.resolved ? 'resolved' : 'unresolved';

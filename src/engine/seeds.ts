@@ -5,7 +5,7 @@
  * user's own Spotify data; Spotify's recommendation endpoints are not
  * available to new apps, so nothing here depends on them.
  */
-import type { SeedSpec } from '../types.js';
+import type { Candidate, Provider, SeedSpec, SpotifyTrack } from '../types.js';
 import { LineupifyError } from '../types.js';
 import { artistCache } from '../infra/cache.js';
 import { log } from '../infra/log.js';
@@ -15,6 +15,7 @@ import { isAbort } from './resolve.js';
 import { resolveSource } from './playlists.js';
 import * as deezer from '../sources/deezer.js';
 import * as lastfm from '../sources/lastfm.js';
+import { SIMILAR_DEFAULT_PER_SONG, SIMILAR_MAX_PER_SONG, similarSongsSeed, type SeedSong } from './similar.js';
 
 export interface SeedArtist {
   name: string;
@@ -26,12 +27,22 @@ export interface SeedArtist {
 export interface SeedContext {
   lastfmApiKey?: string;
   signal?: AbortSignal;
+  /** similar_songs: how seed song references are resolved (draft provider), and the exclusion switches. */
+  provider?: Provider;
+  lookupTrack?: (ref: string) => Promise<SpotifyTrack | undefined>;
+  excludeSeedSongs?: boolean;
+  excludeSeedArtists?: boolean;
+  tracksPerArtist?: number;
 }
 
 export interface SeedResult {
   artists: SeedArtist[];
   /** Human-readable provenance, e.g. "Deezer playlists: Dreampop, you're dreaming". */
   note: string;
+  /** similar_songs: exact songs per folded artist name; the build fetches these instead of top tracks. */
+  pinned?: Record<string, Candidate[]>;
+  /** similar_songs: the resolved seed songs (for excludeSeedSongs). */
+  seedSongs?: SeedSong[];
 }
 
 export const DEFAULT_SEED_LIMIT = 30;
@@ -367,6 +378,12 @@ export async function expandSeed(seed: SeedSpec, ctx: SeedContext): Promise<Seed
     case 'similar_to':
       if (!value) throw new LineupifyError('SEED_VALUE_REQUIRED', 'A similar_to seed needs an artist name.');
       return similarSeed(value, limit, ctx);
+    case 'similar_songs': {
+      if (!ctx.lookupTrack) throw new LineupifyError('SEED_NEEDS_LOOKUP', 'similar_songs needs a track lookup; this is a build-only seed.');
+      const perSong = seed.limit === undefined ? SIMILAR_DEFAULT_PER_SONG : Math.max(1, Math.min(SIMILAR_MAX_PER_SONG, Math.floor(seed.limit)));
+      const r = await similarSongsSeed(seed, perSong, { lastfmApiKey: ctx.lastfmApiKey, signal: ctx.signal, lookupTrack: ctx.lookupTrack, excludeSeedSongs: ctx.excludeSeedSongs, excludeSeedArtists: ctx.excludeSeedArtists, tracksPerArtist: ctx.tracksPerArtist });
+      return { artists: r.artists, note: r.note, pinned: r.pinned, seedSongs: r.seedSongs };
+    }
     case 'chart':
       return chartSeed(limit, ctx);
     case 'country':
@@ -384,7 +401,8 @@ export async function expandSeed(seed: SeedSpec, ctx: SeedContext): Promise<Seed
   }
 }
 
-export function seedLabel(seed: SeedSpec): string {
+export function seedLabel(seed: SeedSpec & { label?: string }): string {
+  if (seed.label) return `${seed.type} ${seed.label}`;
   switch (seed.type) {
     case 'chart':
       return 'chart';
@@ -392,6 +410,10 @@ export function seedLabel(seed: SeedSpec): string {
       return 'taste';
     case 'blend':
       return `blend ${(seed.sources ?? []).map((s) => clean(s, 24)).join(' + ')}`;
+    case 'similar_songs': {
+      const refs = [seed.value ?? '', ...(seed.songs ?? [])].filter(Boolean);
+      return `similar_songs ${refs.slice(0, 2).map((s) => clean(s, 30)).join(', ')}${refs.length > 2 ? ` +${refs.length - 2}` : ''}`;
+    }
     default:
       return `${seed.type} "${clean(seed.value ?? '', 40)}"`;
   }

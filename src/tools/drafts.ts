@@ -56,11 +56,17 @@ export interface CreateDraftArgs {
   strictBpm?: boolean;
   skipCovers?: boolean;
   excludeTracksFrom?: string[];
+  excludeSeedSongs?: boolean;
+  excludeSeedArtists?: boolean;
   /** spotify (needs a login; can publish) or deezer (no login; export only). Default: spotify when connected, else deezer. */
   provider?: Provider;
 }
 
-const SEED_TYPES: SeedSpec['type'][] = ['genre', 'similar_to', 'chart', 'country', 'playlist', 'taste', 'blend'];
+const SEED_TYPES: SeedSpec['type'][] = ['genre', 'similar_to', 'similar_songs', 'chart', 'country', 'playlist', 'taste', 'blend'];
+
+function isSpotifyTrackRef(ref: string): boolean {
+  return /^spotify:track:|open\.spotify\.com\/(?:intl-[a-z]+\/)?track\//i.test(ref);
+}
 
 function needsSpotify(ref: string): boolean {
   const r = parsePlaylistRef(ref);
@@ -74,6 +80,7 @@ export function assertDeezerCompatible(seeds: SeedSpec[], excludeTracksFrom: str
     if (s.type === 'taste') bad.push('the taste seed');
     if (s.type === 'playlist' && s.value && needsSpotify(s.value)) bad.push(`playlist seed "${clean(s.value, 40)}"`);
     if (s.type === 'blend') for (const src of s.sources ?? []) if (needsSpotify(src)) bad.push(`blend source "${clean(src, 40)}"`);
+    if (s.type === 'similar_songs') for (const ref of [s.value ?? '', ...(s.songs ?? [])]) if (ref && isSpotifyTrackRef(ref)) bad.push(`seed song "${clean(ref, 40)}" (use "Artist - Title" or a Deezer link)`);
   }
   for (const e of excludeTracksFrom) if (needsSpotify(e)) bad.push(`excludeTracksFrom "${clean(e, 40)}"`);
   if (discoveryOnly) bad.push('discoveryOnly');
@@ -90,10 +97,12 @@ function cleanSeeds(raw: SeedSpec[] | undefined): SeedSpec[] {
     const seed: SeedSpec = { type: s.type };
     if (s.value !== undefined) seed.value = clean(s.value, 120);
     if (s.sources) seed.sources = s.sources.map((x) => clean(x, 200)).filter(Boolean).slice(0, 4);
+    if (s.songs) seed.songs = s.songs.map((x) => clean(x, 200)).filter(Boolean).slice(0, 10);
     if (s.minShared !== undefined) seed.minShared = clampInt(s.minShared, 2, 4, 2);
     if (s.limit !== undefined) seed.limit = clampInt(s.limit, 1, MAX_SEED_LIMIT, DEFAULT_SEED_LIMIT);
     if (s.tier && ['headliner', 'sub', 'undercard', 'flat'].includes(s.tier)) seed.tier = s.tier;
     if (['genre', 'similar_to', 'country', 'playlist'].includes(seed.type) && !seed.value) throw new LineupifyError('SEED_VALUE_REQUIRED', `A ${seed.type} seed needs a value.`);
+    if (seed.type === 'similar_songs' && !seed.value && !seed.songs?.length) throw new LineupifyError('SEED_VALUE_REQUIRED', 'A similar_songs seed needs value (one song) or songs (a list): Spotify links/URIs or "Artist - Title".');
     if (seed.type === 'blend' && (seed.sources?.length ?? 0) < 2) throw new LineupifyError('BLEND_NEEDS_SOURCES', 'A blend seed needs 2 to 4 sources (playlist links, draft ids or "me").');
     out.push(seed);
   }
@@ -110,6 +119,11 @@ function defaultNameFor(seeds: SeedSpec[]): string {
       return cap(s.value ?? 'Mix');
     case 'similar_to':
       return `Like ${s.value ?? ''}`.trim();
+    case 'similar_songs': {
+      const first = s.value ?? s.songs?.[0] ?? '';
+      const label = /^spotify:|open\.spotify\.com|deezer\.com/i.test(first) ? 'these songs' : first;
+      return `Songs like ${label}`.trim();
+    }
     case 'chart':
       return 'Top charts';
     case 'country':
@@ -199,6 +213,8 @@ export async function createDraft(args: CreateDraftArgs) {
     strictBpm: args.strictBpm || undefined,
     skipCovers: (args.skipCovers ?? d.skipCovers) || undefined,
     excludeTracksFrom: excludeTracksFrom.length ? excludeTracksFrom : undefined,
+    excludeSeedSongs: args.excludeSeedSongs || undefined,
+    excludeSeedArtists: args.excludeSeedArtists || undefined,
   };
 
   if (provider === 'deezer') assertDeezerCompatible(seeds, excludeTracksFrom, options.discoveryOnly);

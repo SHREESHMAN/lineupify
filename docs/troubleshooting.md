@@ -48,8 +48,10 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 |---|---|---|
 | `NO_ARTISTS` | `create_draft` got no usable names and no seeds. | Pass at least one artist, or a seed such as `{ type: "similar_to", value: "Khruangbin" }`. |
 | `TOO_MANY_ARTISTS` | More than 400 artists. | Split the lineup by day and make one draft per day (`days` filter). |
-| `BAD_SEED` | A seed has an unknown `type`. | Use `genre`, `similar_to`, `chart`, `country`, `playlist`, `taste` or `blend`. |
-| `SEED_VALUE_REQUIRED` | A `genre`, `similar_to`, `country` or `playlist` seed has no `value`. | Add the words, artist, country or playlist reference. |
+| `BAD_SEED` | A seed has an unknown `type`. | Use `genre`, `similar_to`, `similar_songs`, `chart`, `country`, `playlist`, `taste` or `blend`. |
+| `SEED_VALUE_REQUIRED` | A `genre`, `similar_to`, `country` or `playlist` seed has no `value`, or a `similar_songs` seed has neither `value` nor `songs`. | Add the words, artist, country, playlist reference, or the seed songs. |
+| `SEED_SONG_NOT_FOUND` | None of the `similar_songs` seed songs could be found on the draft's provider. | Use a Spotify track link, or "Artist - Title" spelled as on Spotify; `search_tracks` finds the exact track. On a Deezer draft use "Artist - Title" or a Deezer link. |
+| `SEED_NEEDS_LOOKUP` | `similar_songs` was expanded outside a build. | Internal; report it. |
 | `TOO_MANY_SEEDS` | More than 8 seeds. | Combine or drop some. |
 | `BLEND_NEEDS_SOURCES` / `BLEND_TOO_MANY` | A `blend` seed needs 2-4 `sources`. | Pass playlist links or names, draft ids, `library` or `me`. |
 | `SEED_ARTIST_NOT_FOUND` | The `similar_to` artist is not on Deezer (or Last.fm). | Check the spelling, or pass the artist directly in `artists`. |

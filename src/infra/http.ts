@@ -51,6 +51,9 @@ const LIMITS: Record<string, { rate: number; burst: number }> = {
   'accounts.spotify.com': { rate: 2, burst: 2 },
   'api.deezer.com': { rate: 8, burst: 8 },
   'ws.audioscrobbler.com': { rate: 4, burst: 4 },
+  // MusicBrainz asks for at most one request per second per client.
+  'musicbrainz.org': { rate: 1, burst: 1 },
+  'labs.api.listenbrainz.org': { rate: 3, burst: 3 },
 };
 
 export function limiterFor(key: string): TokenBucket {

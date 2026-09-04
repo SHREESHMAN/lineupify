@@ -46,6 +46,8 @@ exports[`MCP server over stdio > lists every tool with a stable input surface 1`
       "discoveryOnly",
       "excludeArtists",
       "excludeExplicit",
+      "excludeSeedArtists",
+      "excludeSeedSongs",
       "excludeTracksFrom",
       "lineup",
       "maxDurationMin",

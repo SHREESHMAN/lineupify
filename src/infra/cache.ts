@@ -94,6 +94,8 @@ export interface CachedSpotifyTrack {
   explicit: boolean;
   isrc?: string;
   isPlayable: boolean;
+  /** Present when the cached track is a Deezer recording (provider deezer, or a Deezer ISRC lookup). */
+  deezerTrackId?: number;
 }
 
 export const artistCache = new JsonCache<ResolvedArtist>('artists', 30 * DAY);

@@ -7,7 +7,7 @@ export type Tier = 'headliner' | 'sub' | 'undercard' | 'flat';
  * but cannot publish, because Deezer stopped issuing API credentials in 2025.
  */
 export type Provider = 'spotify' | 'deezer';
-export type SourceName = 'deezer' | 'lastfm' | 'spotify';
+export type SourceName = 'deezer' | 'lastfm' | 'spotify' | 'listenbrainz';
 export type OrderMode = 'interleave' | 'lineup' | 'shuffle' | 'by_day' | 'known_first';
 
 /** An artist as it appears on a lineup, before resolution. */
@@ -76,6 +76,8 @@ export interface DraftArtist {
   spotifyArtistId?: string;
   /** Where a seeded artist came from, e.g. "similar_to Khruangbin". Absent for artists given directly. */
   origin?: string;
+  /** Exact songs to fetch for this artist (similar_songs seed) instead of its top tracks. */
+  pinned?: Candidate[];
 }
 
 export interface DraftTrack {
@@ -141,9 +143,13 @@ export interface DraftOptions {
   skipCovers?: boolean;
   /** Playlist links / ids, draft ids or "library" whose tracks must not be picked. */
   excludeTracksFrom?: string[];
+  /** similar_songs: drop the seed songs themselves from the result (off by default). */
+  excludeSeedSongs?: boolean;
+  /** similar_songs: drop every song by the seed songs' artists (off by default). */
+  excludeSeedArtists?: boolean;
 }
 
-export type SeedType = 'genre' | 'similar_to' | 'chart' | 'country' | 'playlist' | 'taste' | 'blend';
+export type SeedType = 'genre' | 'similar_to' | 'similar_songs' | 'chart' | 'country' | 'playlist' | 'taste' | 'blend';
 
 /** A source of artists other than a typed list. Expanded in the background build. */
 export interface SeedSpec {
@@ -152,9 +158,11 @@ export interface SeedSpec {
   value?: string;
   /** blend only: playlist links, draft ids or "me" (2-4). */
   sources?: string[];
+  /** similar_songs only: more seed songs (links, URIs or "Artist - Title"), up to 10 with value. */
+  songs?: string[];
   /** blend only: sides an artist must appear on; default all. */
   minShared?: number;
-  /** Max artists this seed adds (default 30, max 100). */
+  /** Max artists this seed adds (default 30, max 100); for similar_songs, similar songs per seed song (default 25, max 100). */
   limit?: number;
   tier?: Tier;
 }
@@ -162,6 +170,8 @@ export interface SeedSpec {
 export interface DraftSeed extends SeedSpec {
   id: string;
   status: 'pending' | 'done' | 'failed';
+  /** Readable label set after expansion, e.g. the resolved seed song names for similar_songs. */
+  label?: string;
   added?: number;
   note?: string;
   error?: string;

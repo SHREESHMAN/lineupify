@@ -2,6 +2,20 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.4.0 - 2026-09-04
+
+Song-level "more like these" playlists from open data.
+
+### Added
+
+- **`similar_songs` seed**: song-level similarity. Give one song (`value`) or up to ten (`songs`) as Spotify links, URIs or "Artist - Title"; the draft gets the songs people listen to together with them, mostly by other artists, with the exact songs pinned rather than the artists' top tracks. Sources: Last.fm `track.getSimilar` (with a key) and ListenBrainz similar recordings (open data, no key; the seed song is found through MusicBrainz by ISRC). A song near several seeds or found by both sources ranks first. `limit` is similar songs per seed song (default 25, max 100). New `create_draft` options `excludeSeedSongs` and `excludeSeedArtists` (both off by default). Name-only candidates (Last.fm, ListenBrainz) now get their ISRC from Deezer before matching, so they match Spotify exactly instead of by text.
+- Seed labels in the summary show the resolved seed songs ("similar_songs Ritviz – Udd Gaye") instead of a truncated link, and seed notes are no longer cut at 120 characters.
+
+### Fixed
+
+- `config.json` edited with PowerShell (`Set-Content`) gains a UTF-8 byte-order mark, which made every JSON read fail silently: the Client ID and Last.fm key were ignored until the file was rewritten. JSON reads now strip the BOM.
+- Similarity sources return credits like "A, B & C" as one artist; those were split into three artists that then fetched their top tracks. The first name is now the artist and the others are kept as contributors.
+
 ## 0.3.0 - 2026-09-04
 
 Lineupify without a Spotify account: every feature except publishing now runs on Deezer with no login, for people who cannot create a Spotify developer app (it needs Premium).

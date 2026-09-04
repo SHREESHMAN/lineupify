@@ -57,6 +57,32 @@ function toCached(t: SpotifyTrack): CachedSpotifyTrack {
   return { ...t };
 }
 
+/**
+ * A candidate that only has a title and an artist (Last.fm, ListenBrainz) gets
+ * its ISRC from Deezer's keyless search so it can be matched exactly instead
+ * of by text. Cached under the same key the Deezer provider uses.
+ */
+async function enrichFromDeezer(c: Candidate, lead: string, ctx: MatchContext): Promise<void> {
+  const key = `deezer:q:${titleKey(c.titleShort || c.title)}|${fold(lead)}`;
+  try {
+    let found = await spotifyTrackCache.get(key);
+    if (found === undefined) {
+      const hit = await deezer.findTrack(c.titleShort || c.title, lead, ctx.signal);
+      found = hit ? toCached(hit) : null;
+      await spotifyTrackCache.set(key, found);
+    }
+    if (!found) return;
+    c.isrc = normalizeIsrc(found.isrc);
+    c.deezerTrackId = found.deezerTrackId;
+    if (!c.durationMs && found.durationMs) c.durationMs = found.durationMs;
+    if (c.explicit === undefined) c.explicit = found.explicit;
+    if (ctx.wantBpm) await ensureIsrc(c, ctx.signal, true);
+  } catch (err) {
+    if (isAbort(err)) throw err;
+    log.debug(`deezer enrichment failed for ${lead} - ${c.title}`, String(err));
+  }
+}
+
 function artistMatches(track: SpotifyTrack, name: string, primaryOnly: boolean): boolean {
   const target = fold(name);
   if (!target) return false;
@@ -138,6 +164,7 @@ export async function matchCandidate(c: Candidate, artistName: string, ctx: Matc
 
   await ensureIsrc(c, ctx.signal, ctx.wantBpm);
   const lead = c.leadArtist || artistName;
+  if (!c.isrc && !c.deezerTrackId && c.source !== 'spotify') await enrichFromDeezer(c, lead, ctx);
 
   if (c.isrc) {
     const key = `${ctx.userId}:isrc:${c.isrc}`;

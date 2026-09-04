@@ -23,7 +23,7 @@ export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
   const viaIsrc = d.tracks.filter((t) => t.matchedVia === 'isrc').length;
   const viaText = d.tracks.filter((t) => t.matchedVia === 'text').length;
   const provider = d.provider ?? 'spotify';
-  const bySource = { deezer: 0, lastfm: 0, spotify: 0, manual: 0 };
+  const bySource = { deezer: 0, lastfm: 0, spotify: 0, listenbrainz: 0, manual: 0 };
   for (const t of d.tracks) bySource[t.source]++;
   const tierCounts = (['headliner', 'sub', 'undercard', 'flat'] as const)
     .map((tier) => {
@@ -46,7 +46,7 @@ export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
   }
   if (d.error) lines.push(`error: ${clean(d.error, 200)}`);
   for (const s of seeds) {
-    lines.push(s.status === 'failed' ? `Seed ${clean(seedLabel(s), 60)}: FAILED — ${clean(s.error ?? 'no artists', 120)}` : `Seed ${clean(seedLabel(s), 60)} → ${s.added ?? 0} artists (${clean(s.note ?? '', 120)})`);
+    lines.push(s.status === 'failed' ? `Seed ${clean(seedLabel(s), 60)}: FAILED — ${clean(s.error ?? 'no artists', 120)}` : `Seed ${clean(seedLabel(s), 60)} → ${s.added ?? 0} artists (${clean(s.note ?? '', 260)})`);
   }
   const filters = describeFilters(d.options);
   if (filters.length) lines.push(`Filters: ${filters.join(' · ')}`);
@@ -54,7 +54,7 @@ export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
   for (const n of d.buildNotes ?? []) lines.push(clean(n, 400));
   lines.push(`Artists ${live.length} (resolved ${resolved} · unresolved ${unresolved.length}${pending ? ` · pending ${pending}` : ''}${low ? ` · low-confidence ${low}` : ''})`);
   const via = provider === 'deezer' ? `on deezer ${d.tracks.filter((t) => t.matchedVia === 'deezer').length}` : `via isrc ${viaIsrc} / text ${viaText}`;
-  lines.push(`Tracks ${d.tracks.length} · ${fmtDuration(totalDurationMs(d))} · explicit ${explicit} · ${via} · sources dz ${bySource.deezer} / lfm ${bySource.lastfm} / sp ${bySource.spotify}${bySource.manual ? ` / manual ${bySource.manual}` : ''}`);
+  lines.push(`Tracks ${d.tracks.length} · ${fmtDuration(totalDurationMs(d))} · explicit ${explicit} · ${via} · sources dz ${bySource.deezer} / lfm ${bySource.lastfm} / sp ${bySource.spotify}${bySource.listenbrainz ? ` / lb ${bySource.listenbrainz}` : ''}${bySource.manual ? ` / manual ${bySource.manual}` : ''}`);
   lines.push(`Tiers ${tierCounts || 'flat'} · order ${d.options.order} · ${d.public ? 'public' : 'private'}${d.options.excludeExplicit ? ' · clean only' : ''}`);
   if (d.playlistId) lines.push(`Published: ${d.playlistUrl ?? d.playlistId}`);
   const report = notFoundReport(d);
@@ -113,7 +113,7 @@ export function tracksView(d: Draft, offset: number, limit: number): string {
 }
 
 function srcAbbr(s: string): string {
-  return { deezer: 'dz', lastfm: 'lfm', spotify: 'sp', manual: 'man' }[s] ?? s;
+  return { deezer: 'dz', lastfm: 'lfm', spotify: 'sp', listenbrainz: 'lb', manual: 'man' }[s] ?? s;
 }
 
 export function artistsView(d: Draft, offset: number, limit: number): string {

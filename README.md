@@ -276,6 +276,7 @@ The engine only needs an artist list. A **seed** produces one for you, alone or 
 |---|---|---|
 | `{ type: "genre", value: "shoegaze" }` | The artists of that genre, mood or scene; any words work ("melancholic", "rainy sunday jazz"). | Last.fm tag top artists when a key is set; otherwise public Deezer playlists whose titles match, read and counted. |
 | `{ type: "similar_to", value: "Khruangbin" }` | Artists like that one (never the artist itself). | Deezer related artists, plus Last.fm similar artists with a key. |
+| `{ type: "similar_songs", value: "Ritviz - Udd Gaye", songs: ["<more links or Artist - Title>"] }` | **Songs** listened to together with the seed song(s), mostly by other artists; the exact songs are fetched, not the artists' top tracks. A song near several seeds, or found by both sources, ranks first. `limit` = similar songs per seed song (default 25, max 100); up to 10 seed songs. `excludeSeedArtists: true` for other artists only, `excludeSeedSongs: true` to drop the seeds themselves (both off by default). | Last.fm track.getSimilar with a key, plus ListenBrainz similar recordings (open data, keyless; the song is found through MusicBrainz by ISRC). Songs are matched to Spotify by ISRC via Deezer. |
 | `{ type: "chart" }` | What is popular right now. | Deezer global chart (plus Last.fm chart). |
 | `{ type: "country", value: "Brazil" }` | What a country listens to. | Last.fm geo charts with a key; Deezer's "Top <Country>" chart playlists otherwise. |
 | `{ type: "playlist", value: "<link or name>" }` | The artists of a playlist, most frequent first. | Spotify or Deezer playlist, a name from your library, a draft, or `library`. |
@@ -288,6 +289,7 @@ Recipes the assistant can run in one call:
 
 - **Describe it:** artists it proposes + `seeds: [{ type: "genre", value: "<the words>" }]`.
 - **More like this:** `seeds: [{ type: "similar_to", value: "<artist>" }]`, `tracksPerArtist: 2`.
+- **Songs like these, other artists only:** `seeds: [{ type: "similar_songs", value: "<song link>", songs: [...] }]`, `excludeSeedArtists: true`, `excludeTracksFrom: ["library"]`.
 - **90s hip hop:** `seeds: [{ type: "genre", value: "hip hop" }]`, `yearRange: { from: 1990, to: 1999 }`.
 - **Running:** any seed + `bpmRange: { min: 160, max: 180 }`.
 - **Expand my playlist:** `expand_playlist` (a `playlist` seed + `excludeTracksFrom` the same playlist).
@@ -326,6 +328,8 @@ No Spotify account for the other person? `export_draft` gives Markdown, CSV or M
 | `bpmRange` | unset | `{ min, max }`: keep only tracks whose Deezer tempo is in range. Tracks without a tempo are kept unless `strictBpm: true`. |
 | `skipCovers` | `false` | Drop a song when a more popular artist has the original: checked against the other artists in the draft, then with one Deezer title search per remaining track. |
 | `excludeTracksFrom` | unset | Up to 8 playlists (links or names), drafts or `library` whose tracks must never be picked. |
+| `excludeSeedSongs` | `false` | `similar_songs`: leave the seed songs themselves out. |
+| `excludeSeedArtists` | `false` | `similar_songs`: leave out every song by the seed songs' artists ("other artists only"). |
 
 Every summary and publish result ends with the artists that were not found or had no playable Spotify track, and what to do about them. Defaults can be changed permanently with `lineupify-mcp config set` (see Configuration).
 
@@ -447,7 +451,7 @@ Lineupify runs on your machine with a Spotify app you created. It has no server 
 
 Lineupify never deletes or unfollows a playlist, never changes your library or follows, and creates playlists private unless you ask for public. The only overwrite is `update_playlist` on a playlist Lineupify created, and it refuses if that playlist changed inside Spotify unless forced.
 
-**Where data goes.** Lineupify talks to `api.spotify.com` and `accounts.spotify.com` (your account), `api.deezer.com` (keyless, no account), `ws.audioscrobbler.com` (only with a Last.fm key) and `registry.npmjs.org` (a version check at most every 6 hours; `LINEUPIFY_NO_UPDATE_CHECK=1` turns it off). Artist names, track titles and ISRCs from your playlists, liked songs and top artists are sent to Deezer as search queries for ranking, tempo, genres and cover checks, and to Last.fm when a key is set. No account identifier goes with them. If you would rather keep your listening data out of Deezer, use typed artist lists with `sources: ["spotify"]` and skip `analyze_playlist`, `bpmRange` and `skipCovers`.
+**Where data goes.** Lineupify talks to `api.spotify.com` and `accounts.spotify.com` (your account), `api.deezer.com` (keyless, no account), `ws.audioscrobbler.com` (only with a Last.fm key), `musicbrainz.org` and `labs.api.listenbrainz.org` (only for a `similar_songs` seed: the seed songs' ISRC, title and artist are looked up there) and `registry.npmjs.org` (a version check at most every 6 hours; `LINEUPIFY_NO_UPDATE_CHECK=1` turns it off). Artist names, track titles and ISRCs from your playlists, liked songs and top artists are sent to Deezer as search queries for ranking, tempo, genres and cover checks, and to Last.fm when a key is set. No account identifier goes with them. If you would rather keep your listening data out of Deezer, use typed artist lists with `sources: ["spotify"]` and skip `analyze_playlist`, `bpmRange` and `skipCovers`.
 
 **Switches.**
 
@@ -472,6 +476,7 @@ Lineupify never deletes or unfollows a playlist, never changes your library or f
 - **Size.** Up to 400 artists per draft (split bigger lineups by day; seeds fill the remaining room) and 250 tracks by default (`maxTracks`, up to 10,000).
 - **Reading playlists.** Playlists made by Spotify itself (Discover Weekly, Blend, Today's Top Hits, Daily Mix) cannot be read by new apps; playlists made by people can, when public or in your own library. Reads are capped at 1,000 tracks (3,000 for liked songs). If `status` lists missing permissions after an upgrade, reconnect with `connect` `force: true`.
 - **Genres and tempo.** Spotify gives new apps no genres or audio features, so `analyze_playlist` uses Deezer's coarse genres (Pop, Rock, Metal, …), Last.fm tags when a key is set, and Deezer tempo sampled over up to 60 tracks. Remastered releases carry the remaster year, so `yearRange` treats them as unknown unless `strictYear` is on.
+- **`similar_songs` without a Last.fm key** uses ListenBrainz alone, whose coverage is thinner for small or non-Western artists; a key adds Last.fm's co-listening data. Both sources work at recording level, so the song must exist in MusicBrainz (ListenBrainz) or have Last.fm scrobbles.
 - **Seeds without a Last.fm key** rely on public Deezer playlists for genre and country; results are good for common genres and large countries and thinner for niche tags. A Last.fm key (`setup lastfmApiKey`) adds tag, similar-artist and per-country data.
 - **One builder at a time.** If two hosts (for example Claude Desktop and Claude Code) run Lineupify at once, only one of them builds a given draft; the other reads it.
 - **npx caching.** `npx -y lineupify-mcp` keeps the first version it downloaded. Update with `npm i -g lineupify-mcp@latest` or `npx -y lineupify-mcp@latest`. `status` tells you when a newer version exists.
@@ -495,6 +500,7 @@ Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 - Song ranking, related artists, tempo and playlist data from the [Deezer](https://www.deezer.com) public API.
 - Powered by [Last.fm](https://www.last.fm) data when a `LASTFM_API_KEY` is configured. Last.fm data is for non-commercial use.
+- Song similarity uses open data from [MusicBrainz](https://musicbrainz.org) and [ListenBrainz](https://listenbrainz.org) (MetaBrainz Foundation), no key needed.
 - Playlists are created through the [Spotify Web API](https://developer.spotify.com/documentation/web-api).
 - Built on the [Model Context Protocol](https://modelcontextprotocol.io) (`@modelcontextprotocol/server`).
 

@@ -35,7 +35,8 @@ export async function ensureDirs(): Promise<void> {
 export async function readJson<T>(file: string): Promise<T | undefined> {
   try {
     const raw = await fs.readFile(file, 'utf8');
-    return JSON.parse(raw) as T;
+    // PowerShell's Set-Content writes a UTF-8 BOM, which JSON.parse rejects.
+    return JSON.parse(raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw) as T;
   } catch (err) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === 'ENOENT') return undefined;
