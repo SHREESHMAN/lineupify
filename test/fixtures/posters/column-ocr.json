@@ -1,0 +1,35 @@
+{
+  "description": "OCR of a columnar layout: names separated by runs of spaces or middle dots, an ordinal date range header (26TH - 28TH JUNE 2026), and 'PRESENTED BY' furniture.",
+  "tiered": true,
+  "minArtists": 25,
+  "mustContain": [
+    "EARTH, WIND & FIRE", "NILE RODGERS & CHIC", "SOPHIE ELLIS-BEXTOR", "SUGABABES", "SIMON & GARFUNKEL",
+    "JAMES", "TEXAS", "THE ZUTONS", "CAST", "THE 1975", "KAISER CHIEFS", "LOTTERY WINNERS"
+  ],
+  "mustNotContain": [
+    "26TH - 28TH JUNE 2026", "FRIDAY", "SATURDAY", "SUNDAY", "MAIN STAGE", "PRESENTED BY",
+    "ON SALE NOW", "MORE TBA", "SUMMERFIELDFEST.CO.UK", "EARTH", "WIND & FIRE"
+  ],
+  "discarded": ["26TH - 28TH JUNE 2026", "FRIDAY", "MAIN STAGE", "PRESENTED BY", "SATURDAY", "SUNDAY", "ON SALE NOW", "MORE TBA", "SUMMERFIELDFEST.CO.UK"],
+  "daysDetected": ["friday", "saturday", "sunday"],
+  "stagesDetected": ["MAIN STAGE"],
+  "days": {
+    "EARTH, WIND & FIRE": "friday",
+    "BAXTER DURY": "friday",
+    "SIMON & GARFUNKEL": "saturday",
+    "THE 1975": "sunday"
+  },
+  "stages": {
+    "THE 1975": "MAIN STAGE"
+  },
+  "tiers": {
+    "EARTH, WIND & FIRE": "headliner",
+    "NILE RODGERS & CHIC": "sub",
+    "SUGABABES": "undercard",
+    "SIMON & GARFUNKEL": "headliner",
+    "JAMES": "sub",
+    "THE ZUTONS": "undercard",
+    "THE 1975": "headliner",
+    "THE VACCINES": "undercard"
+  }
+}

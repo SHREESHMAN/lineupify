@@ -1,0 +1,70 @@
+{
+  "manifest_version": "0.3",
+  "name": "lineupify",
+  "display_name": "Lineupify",
+  "version": "0.2.0",
+  "description": "Playlists from a festival lineup, a genre or mood, an artist you like, another playlist, or a blend of several people's taste. Bring your own Spotify client ID.",
+  "long_description": "Paste a festival lineup, describe a mood, name an artist you like, point at a playlist, or blend two people's playlists: Lineupify finds the artists, picks their most popular songs (ranked with Deezer, matched to Spotify by ISRC), lets you review and edit the draft, and creates the playlist in your own Spotify account. It also reads, analyses, compares and merges playlists. Needs a free Spotify developer app (2 minutes, see docs/setup-spotify.md) because Spotify's Development Mode only allows the app owner to use it.",
+  "author": {
+    "name": "SHREESHMAN",
+    "url": "https://github.com/shreeshman/lineupify"
+  },
+  "license": "MIT",
+  "keywords": [
+    "spotify",
+    "playlist",
+    "festival",
+    "lineup",
+    "music",
+    "recommendations",
+    "blend",
+    "deezer"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.js"
+      ],
+      "env": {
+        "SPOTIFY_CLIENT_ID": "${user_config.spotify_client_id}",
+        "LASTFM_API_KEY": "${user_config.lastfm_api_key}"
+      }
+    }
+  },
+  "user_config": {
+    "spotify_client_id": {
+      "type": "string",
+      "title": "Spotify Client ID",
+      "description": "From developer.spotify.com/dashboard. Create an app with Redirect URI http://127.0.0.1:8765/callback (exactly, with the port) and paste its Client ID here. No secret needed.",
+      "required": true,
+      "sensitive": false
+    },
+    "lastfm_api_key": {
+      "type": "string",
+      "title": "Last.fm API key (optional)",
+      "description": "Optional second ranking source. Free key from last.fm/api/account/create.",
+      "required": false,
+      "sensitive": true
+    }
+  },
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=20"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shreeshman/lineupify"
+  },
+  "homepage": "https://github.com/shreeshman/lineupify#readme",
+  "documentation": "https://github.com/shreeshman/lineupify/blob/main/docs/setup-spotify.md",
+  "support": "https://github.com/shreeshman/lineupify/issues"
+}
