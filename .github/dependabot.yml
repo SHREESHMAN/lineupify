@@ -4,10 +4,20 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    groups:
-      dev-dependencies:
-        dependency-type: development
     open-pull-requests-limit: 5
+    groups:
+      # Minor and patch updates of dev tooling arrive together; majors come one PR each.
+      dev-dependencies-minor:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      # typescript-eslint pins a TypeScript range and lags each major; a TypeScript
+      # major PR fails at `npm ci` until it catches up. Minors and patches still flow.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      # Node types track the lowest Node version we support (engines >= 20), not the newest.
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:
