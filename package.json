@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shreeshman/lineupify.git"
+    "url": "git+https://github.com/SHREESHMAN/lineupify.git"
   },
-  "homepage": "https://github.com/shreeshman/lineupify#readme",
+  "homepage": "https://github.com/SHREESHMAN/lineupify#readme",
   "bugs": {
-    "url": "https://github.com/shreeshman/lineupify/issues"
+    "url": "https://github.com/SHREESHMAN/lineupify/issues"
   },
   "mcpName": "io.github.shreeshman/lineupify",
   "type": "module",

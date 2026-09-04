@@ -1,13 +1,14 @@
-# Publishes to npm with provenance and attaches the Claude Desktop bundle to a
-# GitHub release. Trigger: push a tag that matches package.json, e.g.
-#   npm version minor            # bumps package.json and creates the tag
+# Publishes to npm and attaches the Claude Desktop bundle to a GitHub release.
+# Trigger: push a tag that matches package.json, e.g.
+#   npm version minor            # bumps package.json (+ manifest/server.json via the version script) and tags
 #   git push --follow-tags
 # or run it by hand from the Actions tab (workflow_dispatch) for the current version.
 #
-# npm publishing needs the NPM_TOKEN repository secret (a granular token with
-# write access to lineupify-mcp, "bypass 2FA" enabled). If the version is already
-# on npm (for example published from a laptop), the publish step is skipped and
-# the GitHub release is still created.
+# npm publishing uses npm Trusted Publishing (OIDC): the package's settings on
+# npmjs.com name this repository and this workflow file as a trusted publisher,
+# so no token is stored anywhere. id-token: write below is what makes that work.
+# If the version is already on npm (for example published from a laptop), the
+# publish step is skipped and the GitHub release is still created.
 name: Release
 
 on:
@@ -29,6 +30,8 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
+      # Trusted publishing needs npm 11.5.1 or newer; the runner's Node 22 ships an older npm.
+      - run: npm install -g npm@latest && npm --version
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
@@ -50,13 +53,9 @@ jobs:
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish to npm (with provenance)
+      - name: Publish to npm (trusted publishing, with provenance)
         if: steps.meta.outputs.published == 'false'
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "NPM_TOKEN secret is not set; skipping npm publish"; exit 0; fi
-          npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
 
       - name: Build Claude Desktop bundle
         run: npm run bundle:mcpb
