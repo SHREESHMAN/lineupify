@@ -2,7 +2,7 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
-## 0.3.0 - Unreleased
+## 0.3.0 - 2026-09-04
 
 Lineupify without a Spotify account: every feature except publishing now runs on Deezer with no login, for people who cannot create a Spotify developer app (it needs Premium).
 
