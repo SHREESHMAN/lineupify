@@ -2,6 +2,12 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.4.1 - 2026-09-04
+
+### Changed
+
+- MCP Registry metadata: `server.json` moved to the 2025-12-11 schema (camelCase keys, 100-character description) and the registry name is `io.github.SHREESHMAN/lineupify`, matching the GitHub account's case, which the registry checks exactly. No functional change.
+
 ## 0.4.0 - 2026-09-04
 
 Song-level "more like these" playlists from open data.

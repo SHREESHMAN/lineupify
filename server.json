@@ -1,8 +1,7 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-  "name": "io.github.shreeshman/lineupify",
-  "description": "Spotify playlists from a festival lineup, a genre or mood, an artist you like, another playlist, or a blend of several people's taste. Reads, analyses, compares and merges playlists. Bring your own Spotify client ID.",
-  "status": "active",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.SHREESHMAN/lineupify",
+  "description": "Spotify playlists from a festival lineup, a genre, a song, a playlist or a blend. Own client ID.",
   "repository": {
     "url": "https://github.com/shreeshman/lineupify",
     "source": "github"
@@ -10,25 +9,27 @@
   "version": "0.4.0",
   "packages": [
     {
-      "registry_type": "npm",
-      "registry_base_url": "https://registry.npmjs.org",
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "lineupify-mcp",
       "version": "0.4.0",
       "transport": {
         "type": "stdio"
       },
-      "environment_variables": [
+      "environmentVariables": [
         {
           "name": "SPOTIFY_CLIENT_ID",
           "description": "Client ID of your own Spotify app (developer.spotify.com/dashboard, redirect URI http://127.0.0.1:8765/callback). Optional if saved with `lineupify-mcp setup`.",
-          "is_required": false,
-          "is_secret": false
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
         },
         {
           "name": "LASTFM_API_KEY",
-          "description": "Optional Last.fm API key for tag, similar-artist and per-country data.",
-          "is_required": false,
-          "is_secret": true
+          "description": "Optional Last.fm API key for tag, similar-artist, similar-song and per-country data.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
         }
       ]
     }

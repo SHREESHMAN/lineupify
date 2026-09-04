@@ -15,7 +15,7 @@
   "bugs": {
     "url": "https://github.com/SHREESHMAN/lineupify/issues"
   },
-  "mcpName": "io.github.shreeshman/lineupify",
+  "mcpName": "io.github.SHREESHMAN/lineupify",
   "type": "module",
   "bin": {
     "lineupify-mcp": "dist/index.js"
