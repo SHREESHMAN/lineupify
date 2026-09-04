@@ -6,9 +6,13 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      # Minor and patch updates of dev tooling arrive together; majors come one PR each.
+      # eslint and @eslint/js share a major and peer-depend on each other; always bump them together.
+      eslint:
+        patterns: ["eslint", "@eslint/*"]
+      # Minor and patch updates of the remaining dev tooling arrive together; other majors come one PR each.
       dev-dependencies-minor:
         dependency-type: development
+        exclude-patterns: ["eslint", "@eslint/*"]
         update-types: [minor, patch]
     ignore:
       # typescript-eslint pins a TypeScript range and lags each major; a TypeScript
