@@ -1,8 +1,9 @@
 /** parse_lineup, create_draft, get_draft, edit_draft, list_drafts, delete_draft, export_draft */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { DraftOptions, LineupArtist, OrderMode, SeedSpec, SourceName, Tier } from '../types.js';
+import type { DraftOptions, DraftTrack, LineupArtist, OrderMode, Provider, SeedSpec, SourceName, Tier } from '../types.js';
 import { DEFAULT_SEED_LIMIT, MAX_SEED_LIMIT } from '../engine/seeds.js';
+import { parsePlaylistRef } from '../engine/playlists.js';
 import { LineupifyError } from '../types.js';
 import { resolveSettings } from '../infra/config.js';
 import { paths, safeFileName } from '../infra/store.js';
@@ -55,9 +56,31 @@ export interface CreateDraftArgs {
   strictBpm?: boolean;
   skipCovers?: boolean;
   excludeTracksFrom?: string[];
+  /** spotify (needs a login; can publish) or deezer (no login; export only). Default: spotify when connected, else deezer. */
+  provider?: Provider;
 }
 
 const SEED_TYPES: SeedSpec['type'][] = ['genre', 'similar_to', 'chart', 'country', 'playlist', 'taste', 'blend'];
+
+function needsSpotify(ref: string): boolean {
+  const r = parsePlaylistRef(ref);
+  return r.kind === 'me' || r.kind === 'library' || r.kind === 'name' || r.kind === 'spotify';
+}
+
+/** A Deezer draft never touches Spotify, so anything that reads the user's Spotify data is refused up front. */
+export function assertDeezerCompatible(seeds: SeedSpec[], excludeTracksFrom: string[], discoveryOnly: boolean): void {
+  const bad: string[] = [];
+  for (const s of seeds) {
+    if (s.type === 'taste') bad.push('the taste seed');
+    if (s.type === 'playlist' && s.value && needsSpotify(s.value)) bad.push(`playlist seed "${clean(s.value, 40)}"`);
+    if (s.type === 'blend') for (const src of s.sources ?? []) if (needsSpotify(src)) bad.push(`blend source "${clean(src, 40)}"`);
+  }
+  for (const e of excludeTracksFrom) if (needsSpotify(e)) bad.push(`excludeTracksFrom "${clean(e, 40)}"`);
+  if (discoveryOnly) bad.push('discoveryOnly');
+  if (bad.length) {
+    throw new LineupifyError('PROVIDER_NEEDS_SPOTIFY', `These need a Spotify login and cannot be used in a Deezer draft: ${bad.join(', ')}.`, 'Use Deezer playlist links or draft ids instead, or connect Spotify and build with provider "spotify".');
+  }
+}
 const MAX_SEEDS = 8;
 
 function cleanSeeds(raw: SeedSpec[] | undefined): SeedSpec[] {
@@ -121,11 +144,14 @@ function bpmRangeOf(r: { min?: number; max?: number } | undefined): { min?: numb
 }
 
 export async function createDraft(args: CreateDraftArgs) {
-  const tokens = await spotify.loadTokens();
-  if (!tokens) throw new LineupifyError('SPOTIFY_NOT_CONNECTED', 'No Spotify account connected.', 'Call status for setup steps, then connect.');
-  const age = spotify.refreshTokenAge(tokens);
-  if (age.daysLeft <= 0) throw new LineupifyError('TOKEN_EXPIRED_RECONNECT', 'The Spotify refresh token is older than 6 months.', 'Call connect with force: true.');
   const settings = await resolveSettings();
+  const tokens = await spotify.loadTokens();
+  const provider: Provider = args.provider ?? settings.provider ?? (tokens ? 'spotify' : 'deezer');
+  if (provider === 'spotify') {
+    if (!tokens) throw new LineupifyError('SPOTIFY_NOT_CONNECTED', 'No Spotify account connected.', 'Call status for setup steps, then connect. Or pass provider: "deezer" to build without any login (Deezer tracks, export instead of publish).');
+    const age = spotify.refreshTokenAge(tokens);
+    if (age.daysLeft <= 0) throw new LineupifyError('TOKEN_EXPIRED_RECONNECT', 'The Spotify refresh token is older than 6 months.', 'Call connect with force: true.');
+  }
 
   const artists: LineupArtist[] = [];
   const seen = new Set<string>();
@@ -175,15 +201,17 @@ export async function createDraft(args: CreateDraftArgs) {
     excludeTracksFrom: excludeTracksFrom.length ? excludeTracksFrom : undefined,
   };
 
+  if (provider === 'deezer') assertDeezerCompatible(seeds, excludeTracksFrom, options.discoveryOnly);
+
   const lineupName = clean(args.lineup ?? '', 60) || defaultNameFor(seeds);
   const name = clean(args.name ?? '', 100) || settings.namingTemplate.replace('{lineup}', lineupName).slice(0, 100);
-  const draft = newDraft({ name, artists: filtered, options, spotifyUserId: tokens.userId, description: clean(args.description ?? '', 300), seeds });
+  const draft = newDraft({ name, artists: filtered, options, spotifyUserId: provider === 'spotify' ? tokens!.userId : '', description: clean(args.description ?? '', 300), seeds, provider });
 
   await saveDraft(draft);
   await startJob(draft.id, { lastfmApiKey: settings.lastfmApiKey }, draft);
   await waitForJob(draft.id, 15_000);
   const fresh = await getDraft(draft.id);
-  return text(summary(fresh, { connectedAs: connectedName(tokens) }));
+  return text(summary(fresh, { connectedAs: provider === 'spotify' ? connectedName(tokens) : undefined }));
 }
 
 export async function getDraftTool(args: { draftId?: string; view?: 'summary' | 'tracks' | 'artists' | 'unresolved'; offset?: number; limit?: number; waitSeconds?: number }) {
@@ -232,7 +260,7 @@ export async function editDraft(args: { draftId: string; expectedRevision?: numb
   }
   if (!args.ops.length) throw new LineupifyError('NO_OPS', 'ops is empty.');
   const previous = structuredClone(d);
-  const outcome = await applyEdits(d, args.ops, { lookupTrack: (s) => lookupTrack(s) });
+  const outcome = await applyEdits(d, args.ops, { lookupTrack: (s) => lookupTrack(s, undefined, d.provider ?? 'spotify') });
   const result = outcome.draft;
   if (outcome.undone) {
     await saveDraft(result);
@@ -267,24 +295,32 @@ export async function deleteDraftTool(args: { draftId: string }) {
   return text(ok ? `Deleted draft ${args.draftId} (the Spotify playlist, if any, is untouched).` : `No draft ${args.draftId}.`);
 }
 
-export async function exportDraft(args: { draftId: string; format?: 'markdown' | 'csv' | 'm3u'; save?: boolean; overwrite?: boolean }) {
+export function trackLink(t: DraftTrack): string {
+  return t.url ?? (t.deezerTrackId ? `https://www.deezer.com/track/${t.deezerTrackId}` : `https://open.spotify.com/track/${t.spotifyId}`);
+}
+
+export async function exportDraft(args: { draftId: string; format?: 'markdown' | 'csv' | 'm3u' | 'links'; save?: boolean; overwrite?: boolean }) {
   const d = await getDraft(args.draftId);
   const fmt = args.format ?? 'markdown';
   const artistName = new Map(d.artists.map((a) => [a.key, a.name]));
+  const provider = d.provider ?? 'spotify';
   let body: string;
   if (fmt === 'csv') {
     const esc = (s: unknown) => `"${String(s ?? '').replace(/"/g, '""')}"`;
     body = [
-      'position,artist,title,all_artists,album,year,duration_seconds,explicit,bpm,isrc,spotify_uri,spotify_url',
-      ...d.tracks.map((t, i) => [i + 1, artistName.get(t.artistKey) ?? t.artists[0], t.name, t.artists.join('; '), t.album ?? '', t.year ?? '', Math.round(t.durationMs / 1000), t.explicit, t.bpm ? Math.round(t.bpm) : '', t.isrc ?? '', t.uri, `https://open.spotify.com/track/${t.spotifyId}`].map(esc).join(',')),
+      'position,artist,title,all_artists,album,year,duration_seconds,explicit,bpm,isrc,provider,spotify_uri,url',
+      ...d.tracks.map((t, i) => [i + 1, artistName.get(t.artistKey) ?? t.artists[0], t.name, t.artists.join('; '), t.album ?? '', t.year ?? '', Math.round(t.durationMs / 1000), t.explicit, t.bpm ? Math.round(t.bpm) : '', t.isrc ?? '', provider, provider === 'spotify' ? t.uri : '', trackLink(t)].map(esc).join(',')),
     ].join('\n');
   } else if (fmt === 'm3u') {
-    body = ['#EXTM3U', ...d.tracks.flatMap((t) => [`#EXTINF:${Math.round(t.durationMs / 1000)},${artistName.get(t.artistKey) ?? t.artists[0]} - ${t.name}`, `https://open.spotify.com/track/${t.spotifyId}`])].join('\n');
+    body = ['#EXTM3U', ...d.tracks.flatMap((t) => [`#EXTINF:${Math.round(t.durationMs / 1000)},${artistName.get(t.artistKey) ?? t.artists[0]} - ${t.name}`, trackLink(t)])].join('\n');
+  } else if (fmt === 'links') {
+    // One link per line: what playlist transfer tools (TuneMyMusic, Soundiiz) accept as a paste.
+    body = d.tracks.map(trackLink).join('\n');
   } else {
     body = [`# ${d.name}`, '', `${d.tracks.length} tracks · ${fmtDuration(totalDurationMs(d))}`, '', ...d.tracks.map((t, i) => `${i + 1}. **${artistName.get(t.artistKey) ?? t.artists[0]}** – ${t.name}${t.album ? ` _(${t.album})_` : ''} · ${fmtDuration(t.durationMs)}`)].join('\n');
   }
   if (!args.save) return text(body.length > 60_000 ? body.slice(0, 60_000) + '\n… truncated; use save: true for the full file' : body);
-  const ext = fmt === 'markdown' ? 'md' : fmt;
+  const ext = fmt === 'markdown' ? 'md' : fmt === 'links' ? 'txt' : fmt;
   const file = path.join(paths.exportsDir(), `${safeFileName(d.name, d.id)}.${ext}`);
   await fs.mkdir(paths.exportsDir(), { recursive: true });
   const exists = await fs.stat(file).then(() => true, () => false);

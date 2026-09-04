@@ -2,6 +2,10 @@
 
 Lineupify is a stdio MCP server. Any host that can run `npx -y lineupify-mcp` works; this page covers Claude Desktop, Claude Code and Cursor.
 
+## No Spotify account?
+
+Install the server as described below and skip everything about Client IDs and logins. Without a Spotify login Lineupify builds drafts on Deezer, which needs no account; every feature works except publishing into an account, which `export_draft` with `format: "links"` and a free transfer tool replaces. See *Deezer mode* in the README.
+
 ## Prerequisites
 
 - **Node.js 20 or newer**, installed separately from https://nodejs.org. Claude Desktop's bundled Node is not used for classic `command`/`args` config entries; `npx` must be on your PATH. Check with `node --version` and `npx --version` in a terminal.

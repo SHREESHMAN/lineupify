@@ -7,7 +7,7 @@
 import type { Candidate } from '../types.js';
 import { http, sleep } from '../infra/http.js';
 import { log } from '../infra/log.js';
-import { classifyVersion, fold, looksLikeClone, normalizeIsrc } from '../engine/normalize.js';
+import { classifyVersion, fold, looksLikeClone, normalizeIsrc, stripTitleDecorations, titleKey } from '../engine/normalize.js';
 
 const BASE = 'https://api.deezer.com';
 
@@ -317,4 +317,78 @@ export async function genres(signal?: AbortSignal): Promise<{ id: number; name: 
 export async function artistAlbumGenres(artistId: number, limit = 5, signal?: AbortSignal): Promise<number[]> {
   const body = await get<{ data?: { genre_id?: number }[] }>(`/artist/${artistId}/albums?limit=${limit}`, signal);
   return (body?.data ?? []).map((a) => a.genre_id).filter((g): g is number => typeof g === 'number' && g > 0);
+}
+
+// ---------------------------------------------------------------------------
+// Deezer as the track provider (no login). Deezer closed API app registration
+// in 2025, so writes are impossible; reads and lookups stay keyless.
+// ---------------------------------------------------------------------------
+
+export function trackUrl(trackId: number): string {
+  return `https://www.deezer.com/track/${trackId}`;
+}
+
+export function trackUri(trackId: number): string {
+  return `deezer:track:${trackId}`;
+}
+
+/** Parse deezer:track:<id>, deezer.com/.../track/<id> or a bare numeric id. */
+export function parseTrackRef(input: string): number | undefined {
+  const s = input.trim();
+  const m = s.match(/^deezer:track:(\d+)$/) ?? s.match(/deezer\.com\/(?:[a-z]{2}\/)?track\/(\d+)/i) ?? s.match(/^(\d{5,})$/);
+  return m ? Number(m[1]) : undefined;
+}
+
+/** The engine-shaped track for a Deezer recording (see SpotifyTrack). */
+export function toProviderTrack(d: DeezerTrackDetails & { id: number; contributors?: string[]; album?: string }): import('../types.js').SpotifyTrack {
+  const artists = (d.contributors?.length ? d.contributors : d.artistName ? [d.artistName] : []).map((name) => ({ id: '', name }));
+  return {
+    uri: trackUri(d.id),
+    id: String(d.id),
+    name: d.title ?? '',
+    artists,
+    albumName: d.album ?? '',
+    albumType: '',
+    releaseDate: d.releaseDate ?? '',
+    trackNumber: 0,
+    durationMs: d.durationMs ?? 0,
+    explicit: !!d.explicit,
+    isrc: d.isrc,
+    isPlayable: true,
+    deezerTrackId: d.id,
+  };
+}
+
+export async function trackById(trackId: number, signal?: AbortSignal): Promise<import('../types.js').SpotifyTrack | undefined> {
+  const body = await get<RawTrackDetails & { readable?: boolean; contributors?: { name: string }[]; album?: { id: number; title?: string } }>(`/track/${trackId}`, signal);
+  if (!body || !body.id || body.readable === false) return undefined;
+  return toProviderTrack({ ...toDetails(body), id: body.id, contributors: body.contributors?.map((c) => c.name), album: body.album?.title });
+}
+
+/** Find a recording by title and artist; exact title, artist match, most popular first. */
+export async function findTrack(title: string, artist: string, signal?: AbortSignal): Promise<import('../types.js').SpotifyTrack | undefined> {
+  const clean = (s: string) => s.replace(/"/g, '').trim();
+  const q = `artist:"${clean(artist)}" track:"${clean(stripTitleDecorations(title))}"`;
+  const body = await get<{ data?: { id: number; title: string; title_short?: string; readable?: boolean; rank?: number; isrc?: string; duration?: number; explicit_lyrics?: boolean; artist?: { name: string }; album?: { title?: string } }[] }>(`/search/track?q=${encodeURIComponent(q)}&limit=10`, signal);
+  const want = titleKey(title);
+  const titled = (body?.data ?? [])
+    .filter((t) => t.readable !== false && t.artist?.name && !looksLikeClone(t.artist.name))
+    .filter((t) => titleKey(t.title_short || t.title) === want || titleKey(t.title) === want)
+    .sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
+  const sameArtist = (name: string) => fold(name) === fold(artist) || fold(name).startsWith(fold(artist)) || fold(artist).startsWith(fold(name));
+  // Search results name only the lead artist, so a featured artist ("Leon Bridges - Texas Sun")
+  // never matches by name; the artist filter was in the query, so an exact title hit is accepted.
+  const best = titled.find((t) => sameArtist(t.artist!.name)) ?? titled[0];
+  if (!best) return undefined;
+  return toProviderTrack({ id: best.id, title: best.title, isrc: normalizeIsrc(best.isrc), durationMs: (best.duration ?? 0) * 1000, explicit: best.explicit_lyrics, rank: best.rank, artistName: best.artist?.name, album: best.album?.title });
+}
+
+/** Free-text track search (accepts Deezer's artist:"x" track:"y" filters too), most popular first. */
+export async function searchTracksText(q: string, limit = 5, signal?: AbortSignal): Promise<import('../types.js').SpotifyTrack[]> {
+  const body = await get<{ data?: { id: number; title: string; readable?: boolean; rank?: number; isrc?: string; duration?: number; explicit_lyrics?: boolean; artist?: { name: string }; album?: { title?: string } }[] }>(`/search/track?q=${encodeURIComponent(q)}&limit=${Math.min(25, limit * 2)}`, signal);
+  return (body?.data ?? [])
+    .filter((t) => t.readable !== false && t.artist?.name)
+    .sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0))
+    .slice(0, limit)
+    .map((t) => toProviderTrack({ id: t.id, title: t.title, isrc: normalizeIsrc(t.isrc), durationMs: (t.duration ?? 0) * 1000, explicit: t.explicit_lyrics, rank: t.rank, artistName: t.artist?.name, album: t.album?.title }));
 }

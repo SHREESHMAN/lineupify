@@ -5,7 +5,7 @@
  */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { Draft, DraftArtist, DraftOptions, DraftTrack, LineupArtist, OrderMode, SeedSpec, SpotifyTrack, Tier } from '../types.js';
+import type { Draft, DraftArtist, DraftOptions, DraftTrack, LineupArtist, OrderMode, Provider, SeedSpec, SpotifyTrack, Tier } from '../types.js';
 import { LineupifyError } from '../types.js';
 import { paths, readJson, writeJsonAtomic } from '../infra/store.js';
 import { nowIso, shortHash } from '../infra/text.js';
@@ -37,7 +37,7 @@ export function makeSeedId(seed: SeedSpec, index: number): string {
   return `s_${shortHash(`${seed.type}:${seed.value ?? ''}:${(seed.sources ?? []).join(',')}:${index}`)}`;
 }
 
-export function newDraft(params: { name: string; artists: LineupArtist[]; options: DraftOptions; spotifyUserId: string; description?: string; seeds?: SeedSpec[] }): Draft {
+export function newDraft(params: { name: string; artists: LineupArtist[]; options: DraftOptions; spotifyUserId: string; description?: string; seeds?: SeedSpec[]; provider?: Provider }): Draft {
   const anyTier = params.artists.some((a) => !!a.tier);
   const keys = new Set<string>();
   const excluded = new Set(params.options.excludeArtists.map(fold));
@@ -68,6 +68,7 @@ export function newDraft(params: { name: string; artists: LineupArtist[]; option
     status: 'building',
     progress: { done: 0, total: artists.filter((a) => a.status !== 'excluded').length },
     spotifyUserId: params.spotifyUserId,
+    provider: params.provider ?? 'spotify',
     options: params.options,
     artists,
     tracks: [],
@@ -251,17 +252,17 @@ export async function applyEdits(draft: Draft, ops: EditOp[], deps: EditDeps): P
       }
       case 'add_track': {
         const t = await deps.lookupTrack(op.track);
-        if (!t) throw new LineupifyError('TRACK_NOT_FOUND', `Could not find a Spotify track for "${op.track}".`, 'Use search_tracks to find the exact track, then pass its spotify:track: URI.');
+        if (!t) throw new LineupifyError('TRACK_NOT_FOUND', `Could not find a ${draft.provider === 'deezer' ? 'Deezer' : 'Spotify'} track for "${op.track}".`, `Use search_tracks (provider ${draft.provider ?? 'spotify'}) to find the exact track, then pass its URI.`);
         if (draft.tracks.some((x) => x.uri === t.uri)) {
           diff.push(`skipped ${t.name}: already in draft`);
           break;
         }
         let artist = op.artist ? findArtist(draft, op.artist) : undefined;
-        if (!artist) artist = draft.artists.find((a) => t.artists.some((ta) => fold(ta.name) === fold(a.name) || (a.spotifyArtistId && ta.id === a.spotifyArtistId)));
+        if (!artist) artist = draft.artists.find((a) => t.artists.some((ta) => fold(ta.name) === fold(a.name) || (a.spotifyArtistId && ta.id && ta.id === a.spotifyArtistId)));
         if (!artist) {
           const keys = new Set(draft.artists.map((a) => a.key));
           const name = t.artists[0]?.name ?? 'Added';
-          artist = { key: artistKeyFor(name, keys), name, tier: 'flat', status: 'resolved', target: 0, resolved: { name, source: 'user', confidence: 'high', spotifyArtistId: t.artists[0]?.id } };
+          artist = { key: artistKeyFor(name, keys), name, tier: 'flat', status: 'resolved', target: 0, resolved: { name, source: 'user', confidence: 'high', spotifyArtistId: t.artists[0]?.id || undefined } };
           draft.artists.push(artist);
         }
         const ids = new Set(draft.tracks.map((x) => x.id));
@@ -279,6 +280,8 @@ export async function applyEdits(draft: Draft, ops: EditOp[], deps: EditDeps): P
           matchedVia: 'manual',
           source: 'manual',
           role: 'lead',
+          deezerTrackId: t.deezerTrackId,
+          url: t.deezerTrackId ? `https://www.deezer.com/track/${t.deezerTrackId}` : `https://open.spotify.com/track/${t.id}`,
         };
         const pos = op.position !== undefined ? Math.max(0, Math.min(draft.tracks.length, op.position - 1)) : draft.tracks.length;
         draft.tracks.splice(pos, 0, nt);

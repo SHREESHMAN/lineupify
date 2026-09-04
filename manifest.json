@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "lineupify",
   "display_name": "Lineupify",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Playlists from a festival lineup, a genre or mood, an artist you like, another playlist, or a blend of several people's taste. Bring your own Spotify client ID.",
   "long_description": "Paste a festival lineup, describe a mood, name an artist you like, point at a playlist, or blend two people's playlists: Lineupify finds the artists, picks their most popular songs (ranked with Deezer, matched to Spotify by ISRC), lets you review and edit the draft, and creates the playlist in your own Spotify account. It also reads, analyses, compares and merges playlists. Needs a free Spotify developer app (2 minutes, see docs/setup-spotify.md) because Spotify's Development Mode only allows the app owner to use it.",
   "author": {

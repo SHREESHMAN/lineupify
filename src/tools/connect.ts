@@ -97,6 +97,7 @@ export async function statusText(): Promise<string> {
     lines.push('Spotify: not set up. No client ID.');
     lines.push(...SETUP_STEPS);
   }
+  if (!tokens) lines.push('Deezer mode: works right now without any login. create_draft (and seeds, filters, read/analyze/compare/merge of Deezer playlists, exports) builds with Deezer tracks; only publishing to an account is unavailable, use export_draft format "links" and a transfer tool instead.');
 
   lines.push(`Last.fm: ${settings.lastfmApiKey ? 'key set (used as fallback ranking source)' : 'no key (optional; Deezer is the primary source)'}`);
   const d = settings.defaults;
@@ -113,8 +114,8 @@ export async function statusText(): Promise<string> {
   if (latest && latest !== VERSION) lines.push(`Update available: ${latest} (you run ${VERSION}). Install with: npm i -g lineupify-mcp@latest, or clear the npx cache.`);
 
   if (tokens) lines.push('Next: create_draft with artists and/or seeds (genre, similar_to, chart, country, playlist, taste, blend); parse_lineup first for raw poster text; read_playlist / analyze_playlist / compare_playlists for existing playlists.');
-  else if (settings.clientId && !pendingAuth) lines.push('Next: connect.');
-  else if (!settings.clientId) lines.push('Next: setup with the client ID.');
+  else if (settings.clientId && !pendingAuth) lines.push('Next: connect (Spotify), or create_draft with provider "deezer" right away.');
+  else if (!settings.clientId) lines.push('Next: setup with the client ID for Spotify, or create_draft with provider "deezer" right away (no account needed).');
   return lines.join('\n');
 }
 

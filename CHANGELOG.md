@@ -2,6 +2,29 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## 0.3.0 - Unreleased
+
+Lineupify without a Spotify account: every feature except publishing now runs on Deezer with no login, for people who cannot create a Spotify developer app (it needs Premium).
+
+### Added
+
+- **Deezer provider.** `create_draft` (and `expand_playlist`, `merge_playlists`) take `provider: "spotify" | "deezer"`; the default is Spotify when connected and Deezer otherwise, or `config set provider` / `LINEUPIFY_PROVIDER`. A Deezer draft matches every candidate to its Deezer recording (no ISRC round-trip), stores `deezer:track:<id>` URIs and web links, and works with all seeds except `taste`, all filters, editing, `search_tracks` (Deezer search), `add_track` (Deezer links, ids or "Artist - Title"), reading/analysing/comparing/merging Deezer playlists and drafts, and every export.
+- `export_draft` format `links`: one track URL per line, the paste format playlist transfer tools accept. CSV gains `provider` and `url` columns; M3U and CSV links follow the provider.
+- Clear refusals: `PROVIDER_NO_PUBLISH` (Deezer drafts cannot be published because Deezer closed API app registration in 2025), `PROVIDER_NEEDS_SPOTIFY` (taste seed, `me`/`library`/Spotify sources, `discoveryOnly`, `compare_taste` on a Deezer draft), `MERGE_MIXED_PROVIDERS`.
+- `status` and `doctor` explain Deezer mode when no Spotify login exists; `doctor` no longer fails on a missing login when no Client ID was ever set.
+- Boot test: the server is started over stdio in CI and its 21 tools and their input keys are snapshotted, so a renamed tool or dropped option fails the build.
+- `scripts/sync-version.mjs` keeps `manifest.json` and `server.json` at the package version; `npm version` runs it automatically. `npm run coverage`.
+
+### Fixed
+
+- A build paused by a quota, token or network error while an already-resolved artist was being matched could never resume: the artist stayed "resolved" with too few tracks, so `get_draft` found nothing pending. Pausing now re-queues every artist that is short of its target. Found by the new pause-and-resume test.
+- Adding a track by "Featured Artist - Title" on Deezer now works; Deezer search names only the lead artist.
+
+### Changed
+
+- `MERGE_DEEZER_UNSUPPORTED` is gone: Deezer playlists merge into Deezer drafts.
+- Tests: 330 (from 294), now covering the Last.fm parsers, every seed type, Spotify playlist pagination and caching, the remote cover check, analysis enrichment, the CLI, the Deezer provider, pause/resume and the server boot.
+
 ## 0.2.0 - 2026-09-04
 
 Playlists for everyone, not only festival-goers: build from a description, a genre, an artist you like, a country, a chart, an existing playlist, your own taste, or a blend of several people's playlists; read, analyse, compare and merge playlists; filter by year and tempo; skip covers.

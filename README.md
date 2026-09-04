@@ -81,6 +81,12 @@ The one step nobody can skip is creating a Spotify app, because Spotify only let
    - "New songs from my favourite artists that I have not liked yet"
    - "What does my friend's playlist have in common with mine? Then make us a mix."
 
+### No Spotify, or no Spotify Premium? Deezer mode
+
+Spotify only lets a new app serve its owner, and that owner needs Premium. If that is not you, skip steps 1 and 2 entirely: add Lineupify to your host ([docs/hosts.md](docs/hosts.md)) and ask for a playlist. With no Spotify login, drafts build on **Deezer** automatically (or say "use Deezer"; the option is `provider: "deezer"`). Deezer's public API is keyless, so there is nothing to create, paste or approve.
+
+What works in Deezer mode: every seed except your own Spotify taste, every filter, reading, analysing, comparing and merging Deezer playlists and drafts, editing, and all exports. What does not: publishing into an account. Deezer stopped issuing API credentials to new apps in 2025, so no tool can write to a Deezer account today. Instead, `export_draft` with `format: "links"` gives one Deezer link per line, which free transfer tools such as TuneMyMusic or Soundiiz paste straight into a Deezer, Apple Music or YouTube Music playlist. If Deezer reopens its API, publishing will be added.
+
 ## What a conversation looks like
 
 ### A festival
@@ -210,7 +216,7 @@ stateDiagram-v2
 | `create_draft` | Builds a draft from artists and/or seeds (genre, similar artist, chart, country, playlist, your taste, a blend). Returns within ~15 s; larger builds continue in the background. | `artists` and/or `seeds`, `lineup`, `name`, `tracksPerTier`, `tracksPerArtist`, `maxTracks`, `maxDurationMin`, `order`, `yearRange`, `bpmRange`, `skipCovers`, `excludeTracksFrom`, … (see below) |
 | `get_draft` | Shows a draft: `summary` (default), `tracks` (paged, with stable ids, year and tempo), `artists`, or `unresolved`. Waits for progress while building. Also resumes an interrupted build. | `draftId` (omit for latest), `view`, `offset`, `limit`, `waitSeconds` (max 25) |
 | `edit_draft` | Applies one or more edits atomically. Ops: `remove_tracks`, `add_track`, `exclude_artist`, `set_artist_track_count`, `set_artist_source`, `move`, `shuffle`, `reorder`, `set_meta`, `filter`, `undo`. | `draftId`, `ops` (1-50), `expectedRevision` |
-| `search_tracks` | Searches Spotify for a track to add manually; supports `track:` / `artist:` filters. | `query`, `limit` (max 10) |
+| `search_tracks` | Searches Spotify, or Deezer for a Deezer draft, for a track to add manually; supports `track:` / `artist:` filters. | `query`, `limit` (max 10), `provider` |
 | `create_playlist` | Publishes a ready draft as a new playlist and returns its URL. Requires the draft to have been shown to the user or `confirm: true`. | `draftId`, `confirm`, `allowPartial`, `mode: "new"` |
 | `update_playlist` | Replaces the tracks and details of the playlist a draft was published to. Refuses if the playlist changed inside Spotify unless `force: true`. | `draftId`, `force` |
 | `compare_taste` | Marks each artist in a draft as known (in your top or followed artists) or new to you. | `draftId`, `reorderKnownFirst` |
@@ -220,7 +226,7 @@ stateDiagram-v2
 | `merge_playlists` | One deduplicated draft from 1-6 Spotify playlists, drafts or `library`, keeping the actual tracks. | `playlists`, `name`, `order`, `excludeExplicit`, `maxTracks` |
 | `expand_playlist` | More songs by the artists of a playlist, minus what it already has. | `playlist`, `limitArtists`, `tracksPerArtist`, plus the build options |
 | `refresh_taste` | New songs from your own top and followed artists, minus your liked songs. | `limitArtists`, `tracksPerArtist`, `excludePlaylists`, plus the build options |
-| `export_draft` | Returns the draft as Markdown, CSV (with ISRC, year, tempo, Spotify URLs) or M3U. With `save: true` writes a file under `~/.lineupify/exports/`. | `draftId`, `format`, `save`, `overwrite` |
+| `export_draft` | Returns the draft as Markdown, CSV (with ISRC, year, tempo, provider, URLs), M3U, or `links` (one track URL per line, what transfer tools accept). With `save: true` writes a file under `~/.lineupify/exports/`. | `draftId`, `format`, `save`, `overwrite` |
 | `list_drafts` | Lists saved drafts, newest first, with status and whether they were published. | none |
 | `delete_draft` | Deletes a draft from disk. The Spotify playlist is not touched. | `draftId` |
 
@@ -279,6 +285,7 @@ No Spotify account for the other person? `export_draft` gives Markdown, CSV or M
 
 | Option | Default | Meaning |
 |---|---|---|
+| `provider` | `spotify` when connected, else `deezer` | Where the tracks live. `spotify` needs a login and can publish; `deezer` needs nothing and exports instead of publishing. Also settable as a default (`config set provider deezer`) or with `LINEUPIFY_PROVIDER`. |
 | `artists` | required unless `seeds` is given | Up to 400 entries. Each is a name string or `{ name, tier, day, stage }`. `tier` is `headliner`, `sub`, `undercard` or `flat`. |
 | `seeds` | unset | Up to 8 `{ type, value, limit, tier }` entries; see [Seeds](#seeds-playlists-without-typing-artists). |
 | `lineup` | derived from the first seed, else `"Festival lineup"` | Festival name and year, or a short theme, used for the playlist name. |
@@ -352,6 +359,7 @@ Settings are read from environment variables first, then from `~/.lineupify/conf
 | `LINEUPIFY_LOG` | Log level: `error`, `info` (default) or `debug`. Logs go to stderr only (your host's MCP log), never to stdout. Tokens are redacted. |
 | `LINEUPIFY_READ_ONLY` | `1` disables `create_playlist` and `update_playlist`. Drafts, reads, analysis and exports keep working. `status` shows the mode. |
 | `LINEUPIFY_NO_UPDATE_CHECK` | `1` stops the version check against the npm registry. |
+| `LINEUPIFY_PROVIDER` | `spotify` or `deezer`: default provider for new drafts. Unset means Spotify when connected, otherwise Deezer. |
 
 Pass them through your host's `env` block (see [docs/hosts.md](docs/hosts.md)).
 
@@ -386,6 +394,7 @@ Pass them through your host's `env` block (see [docs/hosts.md](docs/hosts.md)).
 | `tracksPerArtist`, `maxTracks`, `maxDurationMin` | number |
 | `order` | `interleave` / `lineup` / `shuffle` / `by_day` / `known_first` |
 | `public`, `excludeExplicit`, `allowVersions`, `discoveryOnly`, `stopIfUnresolved`, `skipCovers` | `true` / `false` |
+| `provider` | `spotify` / `deezer` |
 | `namingTemplate` | text; `{lineup}` is replaced by the lineup name |
 
 Example: `lineupify-mcp config set tracksPerTier.headliner 8`
@@ -436,7 +445,8 @@ Lineupify never deletes or unfollows a playlist, never changes your library or f
 
 ## Limits and known issues
 
-- **Spotify Development Mode.** New Spotify apps run in Development Mode: at most 5 users, and the app owner must have Spotify Premium. Production ("Extended Quota Mode") is only granted to registered businesses with 250,000+ monthly active users, so every Lineupify user creates their own free app instead. Other people can only use your app if you add them under *User Management* in the dashboard.
+- **Spotify Development Mode.** New Spotify apps run in Development Mode: at most 5 users, and the app owner must have Spotify Premium. Production ("Extended Quota Mode") is only granted to registered businesses with 250,000+ monthly active users, so every Lineupify user creates their own free app instead. Other people can only use your app if you add them under *User Management* in the dashboard. Without Premium, use Deezer mode.
+- **Deezer cannot be written to.** Deezer closed API app registration for new developers in 2025 and had not reopened it as of mid-2026, so Deezer drafts are export-only. Reads, ranking, related artists, tempo and playlist lookups are keyless and unaffected.
 - **6-month logins.** Spotify refresh tokens expire 6 months after the original login. `status` warns when 30 days are left; reconnect with `connect` `force: true` (or `lineupify-mcp auth --force`).
 - **Daily quota.** Development Mode has a daily request quota shared across all apps you own. When it runs out Lineupify reports `SPOTIFY_QUOTA_EXCEEDED`, the draft is paused, and `get_draft` resumes it once the quota resets. Results already fetched are cached, so nothing is lost.
 - **60-second hosts.** Claude Desktop and Cursor time out any tool call after 60 s and ignore progress notifications. `create_draft` therefore returns within about 15 s and keeps building in the background; poll with `get_draft` `waitSeconds: 25`. Claude Code has no such limit.
@@ -452,7 +462,8 @@ Lineupify never deletes or unfollows a playlist, never changes your library or f
 
 ```
 npm install
-npm run typecheck && npm run lint && npm test   # unit tests, offline (Spotify and Deezer mocked)
+npm run typecheck && npm run lint && npm test   # unit tests, offline (Spotify and Deezer mocked); includes a stdio boot test of the server
+npm run coverage                                 # the same with a coverage report
 npm run test:live                                # live Deezer checks
 npm run smoke:spotify                            # every Spotify endpoint, needs a connected account
 npx tsx test/smoke/playlists.ts <playlist link>  # reads, analysis and seeds against live APIs

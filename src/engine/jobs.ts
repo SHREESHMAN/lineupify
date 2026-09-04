@@ -5,7 +5,7 @@
  * Progress is checkpointed to disk after every artist so a killed process can
  * resume from where it stopped.
  */
-import type { Candidate, Draft, DraftArtist, Tier } from '../types.js';
+import type { Candidate, Draft, DraftArtist, Provider, Tier } from '../types.js';
 import { LineupifyError } from '../types.js';
 import { log } from '../infra/log.js';
 import { lockAge, paths, tryLock, type LockHandle } from '../infra/store.js';
@@ -114,18 +114,23 @@ async function run(job: Job, settings: JobSettings): Promise<void> {
   await checkpoint(job);
 
   try {
-    const tokens = await getAccessToken();
-    if (!draft.spotifyUserId) draft.spotifyUserId = tokens.userId;
-    if (draft.spotifyUserId !== tokens.userId) {
-      throw new LineupifyError('SPOTIFY_USER_MISMATCH', `This draft was built for Spotify user ${draft.spotifyUserId} but ${tokens.userId} is connected.`, 'Reconnect the original account, or create a new draft.');
+    const provider = draft.provider ?? 'spotify';
+    let userId = 'deezer';
+    if (provider === 'spotify') {
+      const tokens = await getAccessToken();
+      if (!draft.spotifyUserId) draft.spotifyUserId = tokens.userId;
+      if (draft.spotifyUserId !== tokens.userId) {
+        throw new LineupifyError('SPOTIFY_USER_MISMATCH', `This draft was built for Spotify user ${draft.spotifyUserId} but ${tokens.userId} is connected.`, 'Reconnect the original account, or create a new draft.');
+      }
+      userId = tokens.userId;
     }
 
     await expandSeeds(job, settings, signal);
     await resolveExclusions(job, signal);
-    if (draft.options.discoveryOnly) await applyDiscoveryOnly(job, signal);
+    if (draft.options.discoveryOnly && provider === 'spotify') await applyDiscoveryOnly(job, signal);
 
-    const rctx: ResolveContext = { sources: draft.options.sources, lastfmApiKey: settings.lastfmApiKey, signal, spotifyAvailable: true };
-    const mctx = { userId: tokens.userId, signal, wantBpm: !!draft.options.bpmRange };
+    const rctx: ResolveContext = { sources: provider === 'deezer' ? draft.options.sources.filter((s) => s !== 'spotify') : draft.options.sources, lastfmApiKey: settings.lastfmApiKey, signal, spotifyAvailable: provider === 'spotify' };
+    const mctx = { userId, signal, wantBpm: !!draft.options.bpmRange, provider };
 
     await expandCollabs(draft, rctx);
     applyTargets(draft);
@@ -175,7 +180,7 @@ async function run(job: Job, settings: JobSettings): Promise<void> {
       if (signal.aborted) break;
     }
     for (const a of draft.artists) {
-      if (a.status === 'resolved' && have(a) === 0) a.reason = a.reason ?? 'no playable tracks matched on Spotify';
+      if (a.status === 'resolved' && have(a) === 0) a.reason = a.reason ?? (provider === 'deezer' ? 'no tracks passed the filters on Deezer' : 'no playable tracks matched on Spotify');
     }
 
     if (signal.aborted) {
@@ -199,15 +204,31 @@ async function run(job: Job, settings: JobSettings): Promise<void> {
     if (isAbort(err)) {
       draft.status = 'paused';
       draft.error = 'build interrupted; call get_draft to resume';
+      requeueShortArtists(draft);
     } else if (err instanceof LineupifyError && FATAL.includes(err.code)) {
       draft.status = 'paused';
       draft.error = `${err.code}: ${err.message} ${err.hint ?? ''}`.trim();
+      requeueShortArtists(draft);
     } else {
       draft.status = 'failed';
       draft.error = err instanceof Error ? `${(err as LineupifyError).code ?? 'ERROR'}: ${err.message}` : String(err);
       log.error(`draft ${draft.id} failed`, draft.error);
     }
     await checkpoint(job);
+  }
+}
+
+/**
+ * A pause can land while an artist is already "resolved" but still short of
+ * its target (the error came from matching, not resolving). Put those back to
+ * pending so the resume has work to do; their candidates are cached, so the
+ * retry is cheap.
+ */
+function requeueShortArtists(draft: Draft): void {
+  const counts = new Map<string, number>();
+  for (const t of draft.tracks) counts.set(t.artistKey, (counts.get(t.artistKey) ?? 0) + 1);
+  for (const a of draft.artists) {
+    if (a.status === 'resolved' && (counts.get(a.key) ?? 0) < a.target) a.status = 'pending';
   }
 }
 
@@ -385,7 +406,7 @@ function accepts(pass: Pass, c: Candidate): boolean {
   return true;
 }
 
-async function processArtist(draft: Draft, a: DraftArtist, pass: Pass, rctx: ResolveContext, mctx: { userId: string; signal: AbortSignal }, seen: Seen): Promise<void> {
+async function processArtist(draft: Draft, a: DraftArtist, pass: Pass, rctx: ResolveContext, mctx: { userId: string; signal: AbortSignal; wantBpm?: boolean; provider?: Provider }, seen: Seen): Promise<void> {
   const have = () => draft.tracks.filter((t) => t.artistKey === a.key).length;
   let candidates = seen.candidates.get(a.key);
   if (!candidates) {
@@ -455,8 +476,10 @@ async function processArtist(draft: Draft, a: DraftArtist, pass: Pass, rctx: Res
       yearUncertain: yearInfo.year !== undefined && yearInfo.uncertain ? true : undefined,
       bpm: c.bpm ?? undefined,
       rank: c.deezerRank,
+      deezerTrackId: t.deezerTrackId,
+      url: t.deezerTrackId ? `https://www.deezer.com/track/${t.deezerTrackId}` : `https://open.spotify.com/track/${t.id}`,
     });
-    if (!a.spotifyArtistId) {
+    if (!a.spotifyArtistId && mctx.provider !== 'deezer') {
       const target = fold(a.resolved?.name ?? a.name);
       const hit = t.artists.find((x) => fold(x.name) === target) ?? (c.role === 'lead' ? t.artists[0] : undefined);
       if (hit) a.spotifyArtistId = hit.id;

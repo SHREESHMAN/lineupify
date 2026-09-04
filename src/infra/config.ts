@@ -1,4 +1,4 @@
-import type { Config, DraftOptions } from '../types.js';
+import type { Config, DraftOptions, Provider } from '../types.js';
 import { paths, readJson, writeJsonAtomic } from './store.js';
 
 /** Spotify's dashboard rejects loopback redirect URIs without a port, so a fixed port is the default. */
@@ -33,14 +33,18 @@ export async function resolveSettings(): Promise<{
   lastfmApiKey?: string;
   defaults: DraftOptions;
   namingTemplate: string;
+  /** Preferred track provider for new drafts; unset means "Spotify when connected, else Deezer". */
+  provider?: Provider;
 }> {
   const cfg = await loadConfig();
   const port = process.env.SPOTIFY_REDIRECT_PORT ? Number(process.env.SPOTIFY_REDIRECT_PORT) : cfg.spotifyRedirectPort;
-  const { namingTemplate, ...defaultsOverride } = cfg.defaults ?? {};
+  const { namingTemplate, provider, ...defaultsOverride } = cfg.defaults ?? {};
+  const envProvider = process.env.LINEUPIFY_PROVIDER?.trim().toLowerCase();
   return {
     clientId: process.env.SPOTIFY_CLIENT_ID?.trim() || cfg.spotifyClientId,
     redirectPort: port && Number.isFinite(port) && port > 0 ? port : DEFAULT_REDIRECT_PORT,
     lastfmApiKey: process.env.LASTFM_API_KEY?.trim() || cfg.lastfmApiKey,
+    provider: envProvider === 'spotify' || envProvider === 'deezer' ? envProvider : provider,
     defaults: {
       ...DEFAULT_OPTIONS,
       ...defaultsOverride,

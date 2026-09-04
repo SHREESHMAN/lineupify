@@ -1,5 +1,7 @@
 # Setting up your Spotify app
 
+> No Spotify Premium, or no Spotify at all? You can skip this page. Without a Spotify login Lineupify builds on Deezer with no account (see *Deezer mode* in the README); only publishing into an account needs the Spotify app described here.
+
 Lineupify needs a Spotify **Client ID** from an app you own. Creating one is free and takes about two minutes. No client secret is needed: Lineupify logs in with OAuth PKCE, which is designed for apps that cannot keep a secret.
 
 ## Why you need your own app

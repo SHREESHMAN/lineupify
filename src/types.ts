@@ -1,6 +1,12 @@
 /** Shared domain types for Lineupify. Keep this file free of runtime imports. */
 
 export type Tier = 'headliner' | 'sub' | 'undercard' | 'flat';
+/**
+ * Where a draft's tracks live and where it can be published. "spotify" needs a
+ * connected account; "deezer" needs nothing (Deezer's public API is keyless)
+ * but cannot publish, because Deezer stopped issuing API credentials in 2025.
+ */
+export type Provider = 'spotify' | 'deezer';
 export type SourceName = 'deezer' | 'lastfm' | 'spotify';
 export type OrderMode = 'interleave' | 'lineup' | 'shuffle' | 'by_day' | 'known_first';
 
@@ -85,8 +91,12 @@ export interface DraftTrack {
   explicit: boolean;
   isrc?: string;
   album?: string;
-  matchedVia: 'isrc' | 'text' | 'spotify' | 'manual';
+  matchedVia: 'isrc' | 'text' | 'spotify' | 'manual' | 'deezer';
   source: SourceName | 'manual';
+  /** Set for Deezer-provider drafts (uri is then deezer:track:<id> and spotifyId is empty). */
+  deezerTrackId?: number;
+  /** Public web link to the track on its provider. */
+  url?: string;
   role: 'lead' | 'featured';
   isVersion?: boolean;
   year?: number;
@@ -208,8 +218,10 @@ export interface Draft {
   status: 'building' | 'ready' | 'paused' | 'failed';
   progress: { done: number; total: number };
   error?: string;
-  /** Spotify user id the draft was built for. */
+  /** Spotify user id the draft was built for (empty for Deezer-provider drafts). */
   spotifyUserId: string;
+  /** Absent in drafts from 0.2.x, which are Spotify. */
+  provider?: Provider;
   options: DraftOptions;
   artists: DraftArtist[];
   tracks: DraftTrack[];
@@ -231,6 +243,11 @@ export interface Draft {
   buildNotes?: string[];
 }
 
+/**
+ * A track on either provider in the shape the engine works with. For Spotify
+ * it is the API object; for Deezer, uri is deezer:track:<id>, id is the Deezer
+ * id as a string, artist ids are empty and albumType is "".
+ */
 export interface SpotifyTrack {
   uri: string;
   id: string;
@@ -244,6 +261,8 @@ export interface SpotifyTrack {
   explicit: boolean;
   isrc?: string;
   isPlayable: boolean;
+  /** Present on Deezer-provider tracks. */
+  deezerTrackId?: number;
 }
 
 export interface Tokens {
@@ -263,7 +282,7 @@ export interface Config {
   spotifyClientId?: string;
   spotifyRedirectPort?: number;
   lastfmApiKey?: string;
-  defaults: Partial<DraftOptions> & { namingTemplate?: string };
+  defaults: Partial<DraftOptions> & { namingTemplate?: string; provider?: Provider };
 }
 
 export class LineupifyError extends Error {

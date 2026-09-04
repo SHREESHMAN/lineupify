@@ -1,6 +1,6 @@
 {
   "name": "lineupify-mcp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server that builds Spotify playlists from festival lineups, genres, moods, similar artists, other playlists or a blend of several people's taste. Bring your own Spotify client ID.",
   "license": "MIT",
   "author": {
@@ -45,7 +45,10 @@
     "lint": "eslint src test",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
-    "bundle:mcpb": "node scripts/build-mcpb.mjs"
+    "bundle:mcpb": "node scripts/build-mcpb.mjs",
+    "version": "node scripts/sync-version.mjs && git add manifest.json server.json",
+    "sync-version": "node scripts/sync-version.mjs",
+    "coverage": "vitest run test/unit --coverage"
   },
   "keywords": [
     "mcp",
@@ -69,6 +72,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^10.9.1",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",

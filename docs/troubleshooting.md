@@ -80,7 +80,9 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 | `PLAYLIST_EMPTY` | The playlist has no readable tracks (only episodes or local files). | Nothing to analyse. |
 | `COMPARE_NEEDS_SOURCES` / `COMPARE_TOO_MANY` | `compare_playlists` needs 2-4 sources. | Adjust the list. |
 | `MERGE_NEEDS_PLAYLISTS` / `MERGE_TOO_MANY` | `merge_playlists` needs 1-6 playlists. | Adjust the list. |
-| `MERGE_DEEZER_UNSUPPORTED` | Deezer playlists carry no Spotify URIs, so they cannot be merged as-is. | Use `create_draft` with a `{ type: "playlist" }` seed for a Deezer playlist. |
+| `MERGE_MIXED_PROVIDERS` | The playlists mix Spotify and Deezer tracks; one playlist holds one kind of track id. | Merge Spotify sources together and Deezer sources together, or rebuild one side on the other provider with `create_draft`. |
+| `PROVIDER_NO_PUBLISH` | `create_playlist` / `update_playlist` on a Deezer draft. Deezer no longer issues API credentials, so writes are impossible. | `export_draft` with `format: "links"` or `"m3u"`, then import with a transfer tool (TuneMyMusic, Soundiiz). Or connect Spotify and rebuild with `provider: "spotify"`. |
+| `PROVIDER_NEEDS_SPOTIFY` | A Deezer draft was asked for something that reads your Spotify data: the `taste` seed, `me` / `library` / a playlist name / a Spotify link as a seed or exclusion, `discoveryOnly`, or `compare_taste`. | Use Deezer playlist links or draft ids, or connect Spotify. |
 
 ### Publishing
 

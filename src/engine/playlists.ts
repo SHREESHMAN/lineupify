@@ -80,6 +80,7 @@ export function fromSpotifyTrack(t: SpotifyTrack, addedAt?: string): PlaylistTra
 
 function fromDeezerTrack(t: deezer.DeezerPlaylistTrack): PlaylistTrack {
   return {
+    uri: deezer.trackUri(t.id),
     name: t.title,
     artists: [t.artistName],
     album: t.album,

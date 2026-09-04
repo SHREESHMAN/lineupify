@@ -44,7 +44,10 @@ const yearRangeSchema = z.object({ from: z.number().int().min(1900).max(2100).op
 const bpmRangeSchema = z.object({ min: z.number().int().min(30).max(300).optional(), max: z.number().int().min(30).max(300).optional() }).optional().describe('Keep only tracks whose tempo (Deezer) is in this range, e.g. running { min: 160, max: 180 }');
 const PLAYLIST_REF = z.string().min(1).max(200).describe('open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs');
 
+const PROVIDER = z.enum(['spotify', 'deezer']);
+
 const buildOptionSchemas = {
+  provider: PROVIDER.optional().describe('spotify: needs a connected account, can publish. deezer: no account or login at all, every feature except publishing (export the list instead). Default: spotify when connected, otherwise deezer'),
   tracksPerTier: z.object({ headliner: z.number().int().min(0).max(30).optional(), sub: z.number().int().min(0).max(30).optional(), undercard: z.number().int().min(0).max(30).optional() }).optional(),
   tracksPerArtist: z.number().int().min(0).max(30).optional().describe('Same count for every artist; overrides tracksPerTier. Use 1 for "one song per artist"'),
   maxTracks: z.number().int().min(1).max(10_000).optional(),
@@ -149,7 +152,7 @@ export function buildServer(): McpServer {
     {
       title: 'Create playlist draft',
       description:
-        'Build a draft playlist from artists and/or seeds. Artists: a typed list (festival lineup, "these five bands"). Seeds: genre/mood words, similar_to an artist, chart, country, a playlist, the user\'s taste, or a blend of several people\'s playlists. For a free-text request ("rainy Sunday jazz for cooking", "90s hip hop for a run") propose 15-30 fitting artists yourself and pass them as artists, and add a genre seed with the same words so the list is not only your guess. Each artist gets its most popular songs (Deezer/Last.fm ranking, matched to Spotify by ISRC); constraints: tracksPerArtist, maxDurationMin, excludeExplicit, yearRange, bpmRange, skipCovers, excludeTracksFrom. Returns within ~15 s; larger builds continue in the background (status "building") — poll with get_draft waitSeconds: 25. Nothing is written to Spotify until create_playlist. Defaults: headliner 5, sub 3, undercard 2 tracks (flat artists 3), max 250 tracks, interleaved order, private playlist, live/remix versions skipped.',
+        'Build a draft playlist from artists and/or seeds. Works with a Spotify login (publishable) or with provider "deezer" and no account at all (export the list instead of publishing). Artists: a typed list (festival lineup, "these five bands"). Seeds: genre/mood words, similar_to an artist, chart, country, a playlist, the user\'s taste, or a blend of several people\'s playlists. For a free-text request ("rainy Sunday jazz for cooking", "90s hip hop for a run") propose 15-30 fitting artists yourself and pass them as artists, and add a genre seed with the same words so the list is not only your guess. Each artist gets its most popular songs (Deezer/Last.fm ranking, matched to Spotify by ISRC); constraints: tracksPerArtist, maxDurationMin, excludeExplicit, yearRange, bpmRange, skipCovers, excludeTracksFrom. Returns within ~15 s; larger builds continue in the background (status "building") — poll with get_draft waitSeconds: 25. Nothing is written to Spotify until create_playlist. Defaults: headliner 5, sub 3, undercard 2 tracks (flat artists 3), max 250 tracks, interleaved order, private playlist, live/remix versions skipped.',
       inputSchema: z.object({
         lineup: z.string().max(80).optional().describe('Festival name and year, or a short theme, used for the playlist name, e.g. "Glastonbury 2026" or "Rainy Sunday jazz"'),
         name: z.string().max(100).optional().describe('Playlist name; default "<lineup> · Lineupify"'),
@@ -308,8 +311,8 @@ export function buildServer(): McpServer {
     'search_tracks',
     {
       title: 'Search Spotify tracks',
-      description: 'Search Spotify for a track to add manually. Supports filters like "track:Marea artist:Fred again". Returns URIs for edit_draft add_track.',
-      inputSchema: z.object({ query: z.string().min(1).max(120), limit: z.number().int().min(1).max(10).optional() }),
+      description: 'Search Spotify (or Deezer, for a Deezer draft or when Spotify is not connected) for a track to add manually. Supports filters like "track:Marea artist:Fred again". Returns URIs for edit_draft add_track.',
+      inputSchema: z.object({ query: z.string().min(1).max(120), limit: z.number().int().min(1).max(10).optional(), provider: PROVIDER.optional().describe('Match the draft you will add to') }),
       annotations: { readOnlyHint: true, ...net },
     },
     guard(searchTracks),
@@ -360,8 +363,8 @@ export function buildServer(): McpServer {
     'export_draft',
     {
       title: 'Export draft',
-      description: 'Return the draft as markdown, CSV or M3U text (for non-Spotify users or sharing). With save: true the file is written under ~/.lineupify/exports/ (never elsewhere).',
-      inputSchema: z.object({ draftId: z.string(), format: z.enum(['markdown', 'csv', 'm3u']).optional(), save: z.boolean().optional(), overwrite: z.boolean().optional() }),
+      description: 'Return the draft as markdown, CSV, M3U, or links (one track URL per line, the format playlist transfer tools accept) for sharing or for taking a Deezer draft into any service. With save: true the file is written under ~/.lineupify/exports/ (never elsewhere).',
+      inputSchema: z.object({ draftId: z.string(), format: z.enum(['markdown', 'csv', 'm3u', 'links']).optional(), save: z.boolean().optional(), overwrite: z.boolean().optional() }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     guard(exportDraft),

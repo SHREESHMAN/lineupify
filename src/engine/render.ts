@@ -22,6 +22,7 @@ export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
   const explicit = d.tracks.filter((t) => t.explicit).length;
   const viaIsrc = d.tracks.filter((t) => t.matchedVia === 'isrc').length;
   const viaText = d.tracks.filter((t) => t.matchedVia === 'text').length;
+  const provider = d.provider ?? 'spotify';
   const bySource = { deezer: 0, lastfm: 0, spotify: 0, manual: 0 };
   for (const t of d.tracks) bySource[t.source]++;
   const tierCounts = (['headliner', 'sub', 'undercard', 'flat'] as const)
@@ -35,7 +36,7 @@ export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
     .join(' · ');
 
   const lines: string[] = [];
-  lines.push(`Draft ${d.id} "${clean(d.name, 60)}"  rev ${d.revision}  status ${d.status}${opts.connectedAs ? `  spotify: ${clean(opts.connectedAs, 30)}` : ''}`);
+  lines.push(`Draft ${d.id} "${clean(d.name, 60)}"  rev ${d.revision}  status ${d.status}  provider ${provider}${opts.connectedAs && provider === 'spotify' ? `  spotify: ${clean(opts.connectedAs, 30)}` : ''}${provider === 'deezer' ? '  (no login; export instead of publish)' : ''}`);
   const seeds = d.seeds ?? [];
   if (d.status === 'building') {
     const seedsDone = seeds.filter((s) => s.status !== 'pending').length;
@@ -52,7 +53,8 @@ export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
   if (d.excludeTracks?.resolved) lines.push(`Excluded tracks from: ${clean(d.excludeTracks.note ?? '', 160)} (${d.excludeTracks.uris.length + d.excludeTracks.isrcs.length} identifiers)`);
   for (const n of d.buildNotes ?? []) lines.push(clean(n, 400));
   lines.push(`Artists ${live.length} (resolved ${resolved} · unresolved ${unresolved.length}${pending ? ` · pending ${pending}` : ''}${low ? ` · low-confidence ${low}` : ''})`);
-  lines.push(`Tracks ${d.tracks.length} · ${fmtDuration(totalDurationMs(d))} · explicit ${explicit} · via isrc ${viaIsrc} / text ${viaText} · sources dz ${bySource.deezer} / lfm ${bySource.lastfm} / sp ${bySource.spotify}${bySource.manual ? ` / manual ${bySource.manual}` : ''}`);
+  const via = provider === 'deezer' ? `on deezer ${d.tracks.filter((t) => t.matchedVia === 'deezer').length}` : `via isrc ${viaIsrc} / text ${viaText}`;
+  lines.push(`Tracks ${d.tracks.length} · ${fmtDuration(totalDurationMs(d))} · explicit ${explicit} · ${via} · sources dz ${bySource.deezer} / lfm ${bySource.lastfm} / sp ${bySource.spotify}${bySource.manual ? ` / manual ${bySource.manual}` : ''}`);
   lines.push(`Tiers ${tierCounts || 'flat'} · order ${d.options.order} · ${d.public ? 'public' : 'private'}${d.options.excludeExplicit ? ' · clean only' : ''}`);
   if (d.playlistId) lines.push(`Published: ${d.playlistUrl ?? d.playlistId}`);
   const report = notFoundReport(d);
@@ -75,7 +77,8 @@ export function notFoundReport(d: Draft): string {
   if (!unresolved.length && !noTracks.length) return '';
   const lines: string[] = [];
   if (unresolved.length) lines.push(`Not found on Deezer or Spotify (${unresolved.length}): ${unresolved.map((a) => clean(a.name, 40)).join(', ')}`);
-  if (noTracks.length) lines.push(`Found, but no playable track on Spotify in this account's market (${noTracks.length}): ${noTracks.map((a) => clean(a.name, 40)).join(', ')}`);
+  const where = (d.provider ?? 'spotify') === 'deezer' ? 'Found, but no track passed the filters on Deezer' : "Found, but no playable track on Spotify in this account's market";
+  if (noTracks.length) lines.push(`${where} (${noTracks.length}): ${noTracks.map((a) => clean(a.name, 40)).join(', ')}`);
   lines.push(
     'To add them anyway, tell the assistant: "add <song> by <artist>" (a Spotify track link works best, or use search_tracks), ' +
       '"use this Spotify artist for <name>: <artist link>" (set_artist_source), or "drop <name>" (exclude_artist). ' +
@@ -90,7 +93,8 @@ export function nextHint(d: Draft): string {
   if (d.status === 'failed') return 'Next: create_draft again, or edit_draft to work with what was built.';
   if (d.playlistId) return 'Next: edit_draft to change, then update_playlist to push changes to Spotify.';
   const unresolved = d.artists.filter((a) => a.status === 'unresolved').length;
-  return `Next: get_draft view=tracks to review${unresolved ? ', get_draft view=unresolved for misses' : ''}, edit_draft to change, create_playlist with confirm: true to publish.`;
+  const publish = (d.provider ?? 'spotify') === 'deezer' ? 'export_draft (format links or m3u) to take the list to Deezer; Deezer drafts cannot be published directly' : 'create_playlist with confirm: true to publish';
+  return `Next: get_draft view=tracks to review${unresolved ? ', get_draft view=unresolved for misses' : ''}, edit_draft to change, ${publish}.`;
 }
 
 export function tracksView(d: Draft, offset: number, limit: number): string {

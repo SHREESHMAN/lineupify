@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { beforeAll, afterAll, describe, expect, it, vi } from 'vitest';
 import type { Candidate, SpotifyTrack, Tokens } from '../../src/types.js';
+import { LineupifyError } from '../../src/types.js';
 
 const home = await fs.mkdtemp(path.join(os.tmpdir(), 'lineupify-flow-'));
 process.env.LINEUPIFY_HOME = home;
@@ -35,12 +36,14 @@ const catalog: Record<string, SpotifyTrack> = {
   ISRC0000005: track('t5'.padEnd(22, '5'), 'Baby Ride', [{ id: 'skr', name: 'Skrillex' }], { isrc: 'US0000000005' }),
   ISRC0000006: track('t6'.padEnd(22, '6'), 'Baby Again', [{ id: 'ft', name: 'Four Tet' }, { id: 'fred', name: 'Fred again..' }], { isrc: 'US0000000006' }),
   ISRC0000007: track('t7'.padEnd(22, '7'), 'Rumble', [{ id: 'skr', name: 'Skrillex' }], { isrc: 'US0000000007' }),
+  ISRC0000008: track('t8'.padEnd(22, '8'), 'So U Kno', [{ id: 'ovr', name: 'Overmono' }], { isrc: 'GB0000000108' }),
 };
 const byIsrc: Record<string, SpotifyTrack> = {};
 for (const t of Object.values(catalog)) byIsrc[t.isrc!] = t;
 
 const playlistCalls: { created: { name: string; isPublic: boolean }[]; added: string[][]; replaced: string[][] } = { created: [], added: [], replaced: [] };
 let loggedOut = false;
+let quotaFail = false;
 
 vi.mock('../../src/sources/spotify.js', () => ({
   SPOTIFY_API_SNAPSHOT: 'test',
@@ -55,7 +58,10 @@ vi.mock('../../src/sources/spotify.js', () => ({
   pendingAuth: () => undefined,
   pendingAuthResult: () => undefined,
   me: async () => ({ id: 'user1', displayName: 'Tester' }),
-  searchByIsrc: async (isrc: string) => (byIsrc[isrc] ? [byIsrc[isrc]!] : []),
+  searchByIsrc: async (isrc: string) => {
+    if (quotaFail) throw new LineupifyError('SPOTIFY_QUOTA_EXCEEDED', 'quota used up', 'wait', 429);
+    return byIsrc[isrc] ? [byIsrc[isrc]!] : [];
+  },
   searchTracks: async (q: string) => {
     const m = q.match(/track:(.+?) artist:(.+)/);
     if (!m) return [];
@@ -97,6 +103,7 @@ const deezerArtists: Record<string, { id: number; name: string; nbFan: number }[
   'four tet': [{ id: 4, name: 'Four Tet', nbFan: 400_000 }],
   'skrillex b2b four tet': [],
   'nobody famous': [],
+  overmono: [{ id: 5, name: 'Overmono', nbFan: 90_000 }],
 };
 function cand(deezerTrackId: number, title: string, lead: { id: number; name: string }, artistId: number, extra: Partial<Candidate> = {}): Candidate {
   return { source: 'deezer', title, titleShort: title, titleVersion: '', leadArtist: lead.name, leadArtistId: String(lead.id), contributors: [lead.name], role: lead.id === artistId ? 'lead' : 'featured', rank: deezerTrackId, deezerTrackId, ...extra };
@@ -106,8 +113,11 @@ const deezerTops: Record<number, Candidate[]> = {
   2: [cand(103, 'Chaise Longue', { id: 2, name: 'Wet Leg' }, 2, { explicit: true }), cand(104, 'Wet Dream', { id: 2, name: 'Wet Leg' }, 2), cand(107, 'Chaise Longue (Live)', { id: 2, name: 'Wet Leg' }, 2, { titleVersion: '(Live)' })],
   3: [cand(105, 'Baby Ride', { id: 3, name: 'Skrillex' }, 3)],
   4: [cand(106, 'Baby Again', { id: 4, name: 'Four Tet' }, 4)],
+  5: [cand(108, 'So U Kno', { id: 5, name: 'Overmono' }, 5)],
 };
-const deezerIsrc: Record<number, string> = { 101: 'GBAHS2100041', 102: 'GBAHS2501582', 103: 'GBCEL2100271', 104: 'GBCEL2100272', 105: 'US0000000005', 106: 'US0000000006', 107: 'GBCEL2100999' };
+const deezerIsrc: Record<number, string> = { 101: 'GBAHS2100041', 102: 'GBAHS2501582', 103: 'GBCEL2100271', 104: 'GBCEL2100272', 105: 'US0000000005', 106: 'US0000000006', 107: 'GBCEL2100999', 108: 'GB0000000108' };
+/** Tracks returned for any Deezer playlist id by the mock; tests set it. */
+let deezerPlaylist: { id: number; title: string; titleShort: string; titleVersion: string; isrc?: string; durationMs: number; explicit: boolean; rank?: number; artistId?: number; artistName: string; album?: string }[] = [];
 
 vi.mock('../../src/sources/deezer.js', async (importOriginal) => {
   const orig = await importOriginal<typeof import('../../src/sources/deezer.js')>();
@@ -119,8 +129,12 @@ vi.mock('../../src/sources/deezer.js', async (importOriginal) => {
     relatedArtists: async (id: number) => (id === 1 ? [{ id: 2, name: 'Wet Leg', nbFan: 60_000 }, { id: 3, name: 'Skrillex', nbFan: 3_000_000 }] : []),
     chartArtists: async () => [{ id: 4, name: 'Four Tet', nbFan: 400_000 }],
     searchPlaylists: async () => [],
-    playlistTracks: async () => ({ tracks: [], total: 0 }),
+    playlistInfo: async (id: number) => ({ id, title: `Deezer list ${id}`, creator: 'someone', nbTracks: deezerPlaylist.length, fans: 3, link: `https://www.deezer.com/playlist/${id}`, public: true }),
+    playlistTracks: async () => ({ tracks: deezerPlaylist, total: deezerPlaylist.length }),
     searchTracksByTitle: async () => [],
+    searchTracksText: async (q: string) => (/marea/i.test(q) ? [orig.toProviderTrack({ id: 101, title: 'Marea', isrc: 'GBAHS2100041', durationMs: 200_000, artistName: 'Fred again..' })] : []),
+    trackById: async (id: number) => (id === 105 ? orig.toProviderTrack({ id: 105, title: 'Baby Ride', isrc: 'US0000000005', durationMs: 180_000, artistName: 'Skrillex' }) : undefined),
+    findTrack: async (title: string, artist: string) => (/rumble/i.test(title) && /skrillex/i.test(artist) ? orig.toProviderTrack({ id: 107, title: 'Rumble', isrc: 'US0000000007', durationMs: 150_000, artistName: 'Skrillex' }) : undefined),
     trackByIsrc: async () => undefined,
     genres: async () => [],
     artistAlbumGenres: async () => [],
@@ -361,6 +375,31 @@ describe('seeds, exclusions and filters', () => {
   });
 });
 
+describe('pause and resume', () => {
+  it('a quota error pauses the build with what was fetched, and get_draft resumes it', async () => {
+    // Overmono's recording is not in the track cache yet, so its match hits Spotify and the quota error.
+    quotaFail = true;
+    const r = await drafts.createDraft({ artists: ['Overmono'], tracksPerArtist: 1 });
+    const id = textOf(r).match(/Draft (d_[a-z0-9]+)/)![1]!;
+    await jobs.waitForJob(id, 10_000);
+    const paused = (await loadDraft(id))!;
+    expect(paused.status).toBe('paused');
+    expect(paused.error).toContain('SPOTIFY_QUOTA_EXCEEDED');
+    expect(paused.tracks.length).toBe(0);
+    // The artist was already resolved when the error hit; the pause must put it back to pending or resume would have nothing to do.
+    expect(paused.artists.some((a) => a.status === 'pending')).toBe(true);
+    await expect(playlist.createPlaylist({ draftId: id, confirm: true })).rejects.toMatchObject({ code: 'DRAFT_PAUSED' });
+
+    // get_draft resumes an interrupted build by design; with the quota back, it finishes.
+    quotaFail = false;
+    const resumed = textOf(await drafts.getDraftTool({ draftId: id, waitSeconds: 10 }));
+    expect(resumed).toContain('status ready');
+    const d = (await loadDraft(id))!;
+    expect(d.tracks.map((t) => t.name)).toEqual(['So U Kno']);
+    expect(d.artists.every((a) => a.status === 'resolved')).toBe(true);
+  });
+});
+
 describe('safety switches', () => {
   it('LINEUPIFY_READ_ONLY blocks publishing but not building or exporting', async () => {
     const d = await built(await drafts.createDraft({ artists: ['Wet Leg'], tracksPerArtist: 1 }));
@@ -388,5 +427,71 @@ describe('safety switches', () => {
     expect(purged).toContain('No Spotify login was saved');
     expect(purged).toContain(`Deleted ${home}`);
     expect(await fs.stat(home).then(() => true, () => false)).toBe(false);
+  });
+});
+
+describe('deezer provider (no Spotify account)', () => {
+  beforeAll(async () => {
+    await (await import('../../src/infra/store.js')).ensureDirs();
+  });
+
+  it('builds with Deezer tracks, refuses to publish, exports links', async () => {
+    // loggedOut is true here (the disconnect test ran), so the provider defaults to deezer.
+    const d = await built(await drafts.createDraft({ artists: ['Fred again..', 'Wet Leg'], tracksPerArtist: 2 }));
+    expect(d.provider).toBe('deezer');
+    expect(d.status).toBe('ready');
+    expect(d.spotifyUserId).toBe('');
+    expect(d.tracks.length).toBe(4);
+    expect(d.tracks.every((t) => t.uri.startsWith('deezer:track:') && t.deezerTrackId && t.matchedVia === 'deezer' && t.url?.startsWith('https://www.deezer.com/track/'))).toBe(true);
+    expect(d.tracks.map((t) => t.name).sort()).toEqual(['Chaise Longue', 'Marea', 'Talk of the Town', 'Wet Dream']);
+    const s = textOf(await drafts.getDraftTool({ draftId: d.id }));
+    expect(s).toContain('provider deezer');
+    expect(s).toContain('on deezer 4');
+    expect(s).toContain('export_draft');
+    await expect(playlist.createPlaylist({ draftId: d.id, confirm: true })).rejects.toMatchObject({ code: 'PROVIDER_NO_PUBLISH' });
+    await expect(playlist.updatePlaylist({ draftId: d.id })).rejects.toMatchObject({ code: 'PROVIDER_NO_PUBLISH' });
+    await expect(playlist.compareTasteTool({ draftId: d.id })).rejects.toMatchObject({ code: 'PROVIDER_NEEDS_SPOTIFY' });
+    const links = textOf(await drafts.exportDraft({ draftId: d.id, format: 'links' })).split('\n');
+    expect(links.length).toBe(4);
+    expect(links.every((l) => /^https:\/\/www\.deezer\.com\/track\/\d+$/.test(l))).toBe(true);
+    const csv = textOf(await drafts.exportDraft({ draftId: d.id, format: 'csv' }));
+    expect(csv.split('\n')[0]).toContain('provider,spotify_uri,url');
+    expect(csv).toContain('"deezer","","https://www.deezer.com/track/101"');
+    const m3u = textOf(await drafts.exportDraft({ draftId: d.id, format: 'm3u' }));
+    expect(m3u).toContain('https://www.deezer.com/track/101');
+  });
+
+  it('refuses Spotify-only seeds, exclusions and discoveryOnly up front', async () => {
+    await expect(drafts.createDraft({ provider: 'deezer', seeds: [{ type: 'taste' }] })).rejects.toMatchObject({ code: 'PROVIDER_NEEDS_SPOTIFY' });
+    await expect(drafts.createDraft({ provider: 'deezer', artists: ['Wet Leg'], excludeTracksFrom: ['library'] })).rejects.toMatchObject({ code: 'PROVIDER_NEEDS_SPOTIFY' });
+    await expect(drafts.createDraft({ provider: 'deezer', artists: ['Wet Leg'], discoveryOnly: true })).rejects.toMatchObject({ code: 'PROVIDER_NEEDS_SPOTIFY' });
+    await expect(drafts.createDraft({ provider: 'deezer', seeds: [{ type: 'blend', sources: [SRC_URL, 'me'] }] })).rejects.toMatchObject({ code: 'PROVIDER_NEEDS_SPOTIFY' });
+    await expect(drafts.createDraft({ provider: 'spotify', artists: ['Wet Leg'] })).rejects.toMatchObject({ code: 'SPOTIFY_NOT_CONNECTED' });
+  });
+
+  it('search_tracks and add_track work against Deezer', async () => {
+    const d = await built(await drafts.createDraft({ provider: 'deezer', artists: ['Wet Leg'], tracksPerArtist: 1 }));
+    const found = textOf(await playlist.searchTracks({ query: 'Marea', provider: 'deezer' }));
+    expect(found).toContain('deezer:track:101');
+    const r = await drafts.editDraft({ draftId: d.id, ops: [{ op: 'add_track', track: 'https://www.deezer.com/track/105' }, { op: 'add_track', track: 'Skrillex - Rumble' }] });
+    expect(r.isError).toBeFalsy();
+    const after = (await loadDraft(d.id))!;
+    expect(after.tracks.map((t) => t.name)).toEqual(['Chaise Longue', 'Baby Ride', 'Rumble']);
+    expect(after.tracks[1]).toMatchObject({ uri: 'deezer:track:105', deezerTrackId: 105, matchedVia: 'manual' });
+  });
+
+  it('merges Deezer playlists into a Deezer draft and refuses a mix of providers', async () => {
+    deezerPlaylist = [
+      { id: 101, title: 'Marea', titleShort: 'Marea', titleVersion: '', isrc: 'GBAHS2100041', durationMs: 200_000, explicit: false, artistId: 1, artistName: 'Fred again..' },
+      { id: 103, title: 'Chaise Longue', titleShort: 'Chaise Longue', titleVersion: '', isrc: 'GBCEL2100271', durationMs: 190_000, explicit: true, artistId: 2, artistName: 'Wet Leg' },
+    ];
+    const m = textOf(await playlistTools.mergePlaylistsTool({ playlists: ['https://www.deezer.com/playlist/1109890291', 'deezer:playlist:1109890291'], name: 'Deezer merge' }));
+    expect(m).toContain('provider deezer');
+    const id = m.match(/Draft (d_[a-z0-9]+)/)![1]!;
+    const d = (await loadDraft(id))!;
+    expect(d.provider).toBe('deezer');
+    expect(d.tracks.map((t) => t.uri)).toEqual(['deezer:track:101', 'deezer:track:103']);
+    expect(d.buildNotes![0]).toContain('2 duplicates removed');
+    await expect(playlistTools.mergePlaylistsTool({ playlists: [SRC_URL] })).rejects.toMatchObject({ code: 'SPOTIFY_NOT_CONNECTED' });
   });
 });

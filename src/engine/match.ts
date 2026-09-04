@@ -4,7 +4,7 @@
  * strict title and primary-artist checks. Every lookup is cached per Spotify
  * user because playability depends on the user's market.
  */
-import type { Candidate, SpotifyTrack } from '../types.js';
+import type { Candidate, Provider, SpotifyTrack } from '../types.js';
 import { deezerTrackCache, spotifyTrackCache, type CachedSpotifyTrack } from '../infra/cache.js';
 import { log } from '../infra/log.js';
 import { fold, normalizeIsrc, stripTitleDecorations, titleKey } from './normalize.js';
@@ -17,11 +17,40 @@ export interface MatchContext {
   signal?: AbortSignal;
   /** Fetch Deezer tempo for the candidate (bpmRange filter). */
   wantBpm?: boolean;
+  /** Default spotify. With "deezer" nothing touches Spotify: the candidate's own Deezer recording is the track. */
+  provider?: Provider;
 }
 
 export interface MatchResult {
   track: SpotifyTrack;
-  via: 'isrc' | 'text' | 'spotify';
+  via: 'isrc' | 'text' | 'spotify' | 'deezer';
+}
+
+/** Deezer provider: the candidate is already a Deezer recording, or is looked up by title+artist. */
+async function matchOnDeezer(c: Candidate, artistName: string, ctx: MatchContext): Promise<MatchResult | undefined> {
+  if (c.deezerTrackId) {
+    await ensureIsrc(c, ctx.signal, true);
+    const track = deezer.toProviderTrack({
+      id: c.deezerTrackId,
+      title: c.title,
+      isrc: c.isrc,
+      durationMs: c.durationMs,
+      explicit: c.explicit,
+      rank: c.deezerRank,
+      releaseDate: c.releaseDate,
+      artistName: c.leadArtist || artistName,
+      contributors: c.contributors,
+      album: c.album,
+    });
+    return { track, via: 'deezer' };
+  }
+  const key = `deezer:q:${titleKey(c.titleShort || c.title)}|${fold(c.leadArtist || artistName)}`;
+  const cached = await spotifyTrackCache.get(key);
+  if (cached === null) return undefined;
+  if (cached) return { track: cached, via: 'deezer' };
+  const found = await deezer.findTrack(c.titleShort || c.title, c.leadArtist || artistName, ctx.signal);
+  await spotifyTrackCache.set(key, found ? toCached(found) : null);
+  return found ? { track: found, via: 'deezer' } : undefined;
 }
 
 function toCached(t: SpotifyTrack): CachedSpotifyTrack {
@@ -100,6 +129,7 @@ function titleMatches(spotifyName: string, c: Candidate): boolean {
 }
 
 export async function matchCandidate(c: Candidate, artistName: string, ctx: MatchContext): Promise<MatchResult | undefined> {
+  if (ctx.provider === 'deezer') return matchOnDeezer(c, artistName, ctx);
   if (c.spotify) return { track: c.spotify, via: 'spotify' };
   if (c.spotifyUri) {
     const t = await spotify.track(c.spotifyUri.split(':').pop()!, ctx.signal);
@@ -137,9 +167,18 @@ export async function matchCandidate(c: Candidate, artistName: string, ctx: Matc
   return best ? { track: best, via: 'text' } : undefined;
 }
 
-/** Resolve a user-supplied Spotify URI / URL / "Artist - Title" string to a track. */
-export async function lookupTrack(input: string, signal?: AbortSignal): Promise<SpotifyTrack | undefined> {
+/** Resolve a user-supplied track reference on the given provider (default Spotify). */
+export async function lookupTrack(input: string, signal?: AbortSignal, provider: Provider = 'spotify'): Promise<SpotifyTrack | undefined> {
   const s = input.trim();
+  if (provider === 'deezer') {
+    const id = deezer.parseTrackRef(s);
+    if (id) return deezer.trackById(id, signal);
+    const dash = s.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+    if (dash) return deezer.findTrack(dash[2]!, dash[1]!, signal);
+    const hits = await deezer.searchTracksByTitle(s, 5, signal);
+    const h = hits[0];
+    return h ? deezer.trackById(h.id, signal) : undefined;
+  }
   const uriMatch = s.match(/^spotify:track:([A-Za-z0-9]{22})$/);
   const urlMatch = s.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?track\/([A-Za-z0-9]{22})/);
   const id = uriMatch?.[1] ?? urlMatch?.[1];

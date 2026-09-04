@@ -1,5 +1,5 @@
 /** read_playlist, analyze_playlist, compare_playlists, merge_playlists, expand_playlist, refresh_taste */
-import type { Draft, DraftArtist, DraftOptions, DraftTrack, OrderMode, PlaylistTrack } from '../types.js';
+import type { Draft, DraftArtist, DraftOptions, DraftTrack, OrderMode, PlaylistSnapshot, PlaylistTrack, Provider } from '../types.js';
 import { LineupifyError } from '../types.js';
 import { resolveSettings } from '../infra/config.js';
 import { clean, fmtDuration } from '../infra/text.js';
@@ -102,17 +102,21 @@ function dedupeTracks(lists: PlaylistTrack[][]): { tracks: PlaylistTrack[]; remo
 
 export async function mergePlaylistsTool(args: { playlists: string[]; name?: string; description?: string; order?: OrderMode; excludeExplicit?: boolean; maxTracks?: number; public?: boolean }) {
   const tokens = await spotify.loadTokens();
-  if (!tokens) throw new LineupifyError('SPOTIFY_NOT_CONNECTED', 'No Spotify account connected.', 'Call status for setup steps, then connect.');
   const inputs = (args.playlists ?? []).map((s) => clean(s, 200)).filter(Boolean);
   if (inputs.length < 1) throw new LineupifyError('MERGE_NEEDS_PLAYLISTS', 'Pass 1 to 6 playlists (links, names, draft ids or "library").');
   if (inputs.length > 6) throw new LineupifyError('MERGE_TOO_MANY', 'merge_playlists takes at most 6 playlists.');
   const settings = await resolveSettings();
-  const snaps = [];
+  const snaps: PlaylistSnapshot[] = [];
   for (const input of inputs) {
     const ref = requireTrackRef(input);
-    if (ref.kind === 'deezer') throw new LineupifyError('MERGE_DEEZER_UNSUPPORTED', `Deezer playlists cannot be merged directly (${input}).`, 'Use create_draft with a { type: "playlist" } seed for a Deezer playlist; merge works with Spotify playlists, drafts and "library".');
+    if (ref.kind !== 'deezer' && ref.kind !== 'draft' && !tokens) throw new LineupifyError('SPOTIFY_NOT_CONNECTED', `Reading ${input} needs a Spotify login.`, 'Connect Spotify, or merge Deezer playlists and drafts only.');
     snaps.push(await readPlaylist(ref));
   }
+  // Every source must live on the same provider: a playlist holds one kind of track id.
+  const providerOf = (s: PlaylistSnapshot): Provider | undefined => (s.tracks.some((t) => t.uri?.startsWith('deezer:')) ? 'deezer' : s.tracks.some((t) => t.uri?.startsWith('spotify:')) ? 'spotify' : undefined);
+  const providers = new Set(snaps.map(providerOf).filter((p): p is Provider => !!p));
+  if (providers.size > 1) throw new LineupifyError('MERGE_MIXED_PROVIDERS', 'These playlists mix Spotify and Deezer tracks, which cannot share one playlist.', 'Merge Spotify sources together and Deezer sources together, or rebuild one side with create_draft on the other provider.');
+  const provider: Provider = providers.values().next().value ?? (tokens ? 'spotify' : 'deezer');
   const merged = dedupeTracks(snaps.map((s) => s.tracks.filter((t) => t.uri && (!args.excludeExplicit || !t.explicit))));
   const cap = clampInt(args.maxTracks, 1, 10_000, 10_000);
   const tracks = merged.tracks.slice(0, cap);
@@ -137,7 +141,25 @@ export async function mergePlaylistsTool(args: { playlists: string[]; name?: str
     }
     const id = makeTrackId(t.uri!, ids);
     ids.add(id);
-    draftTracks.push({ id, uri: t.uri!, spotifyId: t.spotifyId ?? t.uri!.split(':').pop()!, name: t.name, artists: t.artists, artistKey: key, durationMs: t.durationMs, explicit: t.explicit, isrc: t.isrc, album: t.album, matchedVia: 'manual', source: 'manual', role: 'lead', year: t.year });
+    const deezerTrackId = provider === 'deezer' ? (t.deezerTrackId ?? Number(t.uri!.split(':').pop())) : undefined;
+    draftTracks.push({
+      id,
+      uri: t.uri!,
+      spotifyId: provider === 'spotify' ? (t.spotifyId ?? t.uri!.split(':').pop()!) : '',
+      name: t.name,
+      artists: t.artists,
+      artistKey: key,
+      durationMs: t.durationMs,
+      explicit: t.explicit,
+      isrc: t.isrc,
+      album: t.album,
+      matchedVia: 'manual',
+      source: 'manual',
+      role: 'lead',
+      year: t.year,
+      deezerTrackId,
+      url: deezerTrackId ? `https://www.deezer.com/track/${deezerTrackId}` : `https://open.spotify.com/track/${t.spotifyId ?? t.uri!.split(':').pop()}`,
+    });
   }
   for (const a of artists) a.target = draftTracks.filter((t) => t.artistKey === a.key).length;
   const now = new Date().toISOString();
@@ -152,7 +174,8 @@ export async function mergePlaylistsTool(args: { playlists: string[]; name?: str
     revision: 0,
     status: 'ready',
     progress: { done: artists.length, total: artists.length },
-    spotifyUserId: tokens.userId,
+    spotifyUserId: provider === 'spotify' ? tokens!.userId : '',
+    provider,
     options,
     artists,
     tracks: draftTracks,
@@ -161,10 +184,10 @@ export async function mergePlaylistsTool(args: { playlists: string[]; name?: str
   };
   if (options.order !== 'lineup') applyOrder(draft, options.order);
   await saveDraft(draft);
-  return text(summary(draft, { connectedAs: connectedName(tokens) }));
+  return text(summary(draft, { connectedAs: provider === 'spotify' ? connectedName(tokens) : undefined }));
 }
 
-const COMMON_KEYS: (keyof CreateDraftArgs)[] = ['name', 'description', 'tracksPerArtist', 'maxTracks', 'maxDurationMin', 'order', 'excludeArtists', 'excludeExplicit', 'allowVersions', 'public', 'yearRange', 'strictYear', 'bpmRange', 'strictBpm', 'skipCovers', 'discoveryOnly'];
+const COMMON_KEYS: (keyof CreateDraftArgs)[] = ['name', 'description', 'tracksPerArtist', 'maxTracks', 'maxDurationMin', 'order', 'excludeArtists', 'excludeExplicit', 'allowVersions', 'public', 'yearRange', 'strictYear', 'bpmRange', 'strictBpm', 'skipCovers', 'discoveryOnly', 'provider'];
 
 function pickCommon(args: Record<string, unknown>): Partial<CreateDraftArgs> {
   const out: Record<string, unknown> = {};

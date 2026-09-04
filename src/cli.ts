@@ -54,7 +54,7 @@ export function help(): string {
     '  lineupify-mcp update-check',
     '',
     'Config keys for `config set`: tracksPerTier.headliner|sub|undercard, tracksPerArtist, maxTracks,',
-    '  order, public, excludeExplicit, allowVersions, discoveryOnly, stopIfUnresolved, skipCovers, namingTemplate',
+    '  order, public, excludeExplicit, allowVersions, discoveryOnly, stopIfUnresolved, skipCovers, provider, namingTemplate',
   ].join('\n');
 }
 
@@ -174,7 +174,7 @@ export async function runDoctor(): Promise<{ checks: Check[]; ok: boolean }> {
     checks.push({ name: 'Redirect URI', ok: !busy, detail: busy ? `port ${settings.redirectPort} is in use by another program; pick another with setup --port and update the dashboard` : `http://127.0.0.1:${settings.redirectPort}/callback (port free; this exact URI must be in the app's Redirect URIs)` });
   }
   const tokens = await spotify.loadTokens();
-  if (!tokens) checks.push({ name: 'Spotify login', ok: false, detail: 'not connected — run: lineupify-mcp auth' });
+  if (!tokens) checks.push({ name: 'Spotify login', ok: !settings.clientId ? true : false, detail: settings.clientId ? 'not connected — run: lineupify-mcp auth' : 'not connected — Deezer mode works without it (build, read, analyse, export); run setup + auth to publish to Spotify' });
   else {
     const age = spotify.refreshTokenAge(tokens);
     checks.push({ name: 'Spotify login', ok: age.daysLeft > 0, detail: `${tokens.displayName || tokens.userId}; refresh token ${age.daysLeft > 0 ? `valid ${age.daysLeft} more days` : 'EXPIRED — run: lineupify-mcp auth --force'}` });
@@ -448,6 +448,12 @@ async function cmdConfig(args: string[]): Promise<number> {
       defaults.order = value;
     } else if (key === 'namingTemplate') {
       defaults.namingTemplate = value;
+    } else if (key === 'provider') {
+      if (!['spotify', 'deezer'].includes(value)) {
+        console.error('provider: spotify | deezer');
+        return 2;
+      }
+      defaults.provider = value;
     } else {
       console.error(`Unknown key ${key}`);
       return 2;

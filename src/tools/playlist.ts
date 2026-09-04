@@ -1,6 +1,8 @@
 /** search_tracks, create_playlist, update_playlist, compare_taste */
+import type { Draft, Provider } from '../types.js';
 import { LineupifyError } from '../types.js';
 import { clean, fmtDuration } from '../infra/text.js';
+import * as deezer from '../sources/deezer.js';
 import { isRunning } from '../engine/jobs.js';
 import { publishNew, updateExisting } from '../engine/playlist.js';
 import { compareTaste } from '../engine/taste.js';
@@ -9,21 +11,35 @@ import { applyOrder } from '../engine/draft.js';
 import * as spotify from '../sources/spotify.js';
 import { ensureNotLockedElsewhere, ensureWritesAllowed, getDraft, persist, text } from './shared.js';
 
-export async function searchTracks(args: { query: string; limit?: number }) {
+export async function searchTracks(args: { query: string; limit?: number; provider?: Provider }) {
   const q = clean(args.query, 120);
   if (!q) throw new LineupifyError('BAD_QUERY', 'query is empty.');
-  const hits = await spotify.searchTracks(q, Math.min(10, Math.max(1, args.limit ?? 5)));
-  if (!hits.length) return text(`No Spotify tracks for "${q}". Try "track:<title> artist:<name>" filters.`);
-  const lines = [`${hits.length} results for "${q}". Columns: uri  artist – title  album  length`];
+  const limit = Math.min(10, Math.max(1, args.limit ?? 5));
+  const provider: Provider = args.provider ?? ((await spotify.loadTokens()) ? 'spotify' : 'deezer');
+  const hits = provider === 'deezer' ? await deezer.searchTracksText(q, limit) : await spotify.searchTracks(q, limit);
+  if (!hits.length) return text(`No ${provider === 'deezer' ? 'Deezer' : 'Spotify'} tracks for "${q}". Try "track:<title> artist:<name>" filters.`);
+  const lines = [`${hits.length} ${provider} results for "${q}". Columns: uri  artist – title  album  length`];
   for (const h of hits) lines.push(`${h.uri}  ${clean(h.artists.map((a) => a.name).join(', '), 40)} – ${clean(h.name, 50)}  ${clean(h.albumName, 30)}  ${fmtDuration(h.durationMs)}${h.explicit ? ' [E]' : ''}${h.isPlayable ? '' : ' [unavailable]'}`);
-  lines.push('Next: edit_draft with add_track using a uri above.');
+  lines.push(`Next: edit_draft with add_track using a uri above (on a ${provider} draft).`);
   return text(lines.join('\n'));
+}
+
+/** Deezer drafts cannot be published: Deezer stopped issuing API credentials to new apps in 2025. */
+export function assertPublishable(d: Draft): void {
+  if ((d.provider ?? 'spotify') === 'deezer') {
+    throw new LineupifyError(
+      'PROVIDER_NO_PUBLISH',
+      'This is a Deezer draft. Deezer no longer issues API credentials to new apps, so Lineupify cannot create playlists in a Deezer account.',
+      'Use export_draft with format "links" (one Deezer link per line) or "m3u" and import the list into Deezer with a free transfer tool such as TuneMyMusic or Soundiiz. To publish to Spotify instead, connect Spotify and create the draft with provider "spotify".',
+    );
+  }
 }
 
 export async function createPlaylist(args: { draftId: string; confirm?: boolean; allowPartial?: boolean; mode?: 'new' }) {
   ensureWritesAllowed('create_playlist');
   await ensureNotLockedElsewhere(args.draftId);
   const d = await getDraft(args.draftId);
+  assertPublishable(d);
   if (isRunning(d.id) || d.status === 'building') {
     if (!args.allowPartial) throw new LineupifyError('DRAFT_BUILDING', `Draft is still building (${d.progress.done}/${d.progress.total} artists).`, 'Call get_draft with waitSeconds: 25 until ready, or pass allowPartial: true to publish what exists now.');
   }
@@ -65,6 +81,7 @@ export async function updatePlaylist(args: { draftId: string; force?: boolean })
   ensureWritesAllowed('update_playlist');
   await ensureNotLockedElsewhere(args.draftId);
   const d = await getDraft(args.draftId);
+  assertPublishable(d);
   if (isRunning(d.id) || d.status === 'building') throw new LineupifyError('DRAFT_BUILDING', 'Draft is still building.', 'Wait for get_draft to report ready.');
   if (!d.playlistId) throw new LineupifyError('NO_PLAYLIST', 'This draft has not been published.', 'Use create_playlist.');
   const r = await updateExisting(d, !!args.force);
@@ -77,6 +94,7 @@ export async function updatePlaylist(args: { draftId: string; force?: boolean })
 
 export async function compareTasteTool(args: { draftId: string; reorderKnownFirst?: boolean }) {
   const d = await getDraft(args.draftId);
+  if ((d.provider ?? 'spotify') === 'deezer') throw new LineupifyError('PROVIDER_NEEDS_SPOTIFY', 'compare_taste reads your Spotify top and followed artists, which a Deezer draft has no access to.', 'Connect Spotify and build the draft with provider "spotify", or compare against a Deezer playlist with compare_playlists.');
   const r = await compareTaste(d);
   if (args.reorderKnownFirst && d.status !== 'building') applyOrder(d, 'known_first');
   await persist(d, !!args.reorderKnownFirst);
