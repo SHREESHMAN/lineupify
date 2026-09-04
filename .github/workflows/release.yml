@@ -1,22 +1,26 @@
 # Publishes to npm with provenance and attaches the Claude Desktop bundle to a
 # GitHub release. Trigger: push a tag that matches package.json, e.g.
-#   npm version minor            # bumps package.json + manifest via the version script, creates the tag
+#   npm version minor            # bumps package.json and creates the tag
 #   git push --follow-tags
-# First-time setup: add an npm automation token as the NPM_TOKEN repository secret
-# (Settings -> Secrets -> Actions). Once the package exists on npm you can switch
-# to trusted publishing (npm package settings -> Trusted publishers) and drop the token.
+# or run it by hand from the Actions tab (workflow_dispatch) for the current version.
+#
+# npm publishing needs the NPM_TOKEN repository secret (a granular token with
+# write access to lineupify-mcp, "bypass 2FA" enabled). If the version is already
+# on npm (for example published from a laptop), the publish step is skipped and
+# the GitHub release is still created.
 name: Release
 
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
   id-token: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -30,22 +34,41 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
-      - name: Tag must match package.json version
+
+      - name: Resolve version and tag
+        id: meta
         run: |
-          v="v$(node -p "require('./package.json').version")"
-          if [ "$v" != "$GITHUB_REF_NAME" ]; then echo "tag $GITHUB_REF_NAME != package version $v"; exit 1; fi
+          v="$(node -p "require('./package.json').version")"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "tag=v$v" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v$v" ]; then
+            echo "tag ${GITHUB_REF_NAME} does not match package.json version $v"; exit 1
+          fi
+          if npm view "lineupify-mcp@$v" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"; echo "lineupify-mcp@$v is already on npm; publish will be skipped"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm (with provenance)
-        run: npm publish --provenance --access public
+        if: steps.meta.outputs.published == 'false'
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "NPM_TOKEN secret is not set; skipping npm publish"; exit 0; fi
+          npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Build Claude Desktop bundle
         run: npm run bundle:mcpb
+
       - name: GitHub release with the .mcpb attached
         run: |
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" build/lineupify-*.mcpb --clobber
+          tag="${{ steps.meta.outputs.tag }}"
+          if ! git rev-parse "$tag" >/dev/null 2>&1; then git tag "$tag" && git push origin "$tag"; fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" build/lineupify-*.mcpb --clobber
           else
-            gh release create "$GITHUB_REF_NAME" build/lineupify-*.mcpb --title "$GITHUB_REF_NAME" --generate-notes
+            gh release create "$tag" build/lineupify-*.mcpb --title "$tag" --generate-notes
           fi
         env:
           GH_TOKEN: ${{ github.token }}

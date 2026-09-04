@@ -271,7 +271,7 @@ export async function exportDraft(args: { draftId: string; format?: 'markdown' |
   const d = await getDraft(args.draftId);
   const fmt = args.format ?? 'markdown';
   const artistName = new Map(d.artists.map((a) => [a.key, a.name]));
-  let body = '';
+  let body: string;
   if (fmt === 'csv') {
     const esc = (s: unknown) => `"${String(s ?? '').replace(/"/g, '""')}"`;
     body = [

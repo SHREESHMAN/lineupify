@@ -65,7 +65,15 @@ The one step nobody can skip is creating a Spotify app, because Spotify only let
    npx -y lineupify-mcp init
    ```
 
-   It takes the Client ID, logs you in through your browser, adds Lineupify to Claude Desktop, Claude Code or Cursor (whichever it finds), and runs a health check. Prefer clicking? Claude Desktop users can instead download `lineupify-<version>.mcpb` from the [releases page](https://github.com/shreeshman/lineupify/releases) and double-click it. Prefer chat? Add the server by hand ([docs/hosts.md](docs/hosts.md)) and say "connect Lineupify to Spotify with client id …"; the assistant does the rest.
+   It takes the Client ID, logs you in through your browser, adds Lineupify to Claude Desktop, Claude Code or Cursor (whichever it finds), and runs a health check. Prefer clicking? Claude Desktop users can instead download `lineupify-<version>.mcpb` from the [releases page](https://github.com/shreeshman/lineupify/releases) and double-click it.
+
+   **Or let your assistant do step 2.** If your assistant can run terminal commands (Claude Code, Cursor, and similar), paste this, with your Client ID filled in:
+
+   > Set up the Lineupify MCP server for me. Run `npx -y lineupify-mcp setup --client-id PASTE_CLIENT_ID_HERE`, then `npx -y lineupify-mcp auth` and tell me when to approve the login in my browser, then `npx -y lineupify-mcp install --claude-code` (or `--cursor` / `--claude-desktop` for the host you are running in), then `npx -y lineupify-mcp doctor` and show me the result. Windows users: run npx through `cmd /c`.
+
+   If the server is already added but not connected (the `.mcpb` route, or a hand-written config), paste this in any chat:
+
+   > Call Lineupify's `status` tool. If Spotify is not connected, call `connect` with my Client ID PASTE_CLIENT_ID_HERE, tell me to approve the login in the browser, then call `status` again to confirm.
 3. **Ask for a playlist.** Any of these work:
    - "Make me a playlist for this lineup" *(paste the poster text or attach the image)*
    - "Rainy Sunday jazz for cooking, about an hour, nothing explicit"

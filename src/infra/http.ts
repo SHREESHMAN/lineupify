@@ -145,7 +145,7 @@ export async function http(url: string, opts: HttpOptions = {}): Promise<HttpRes
       };
     } catch (err) {
       if (err instanceof HttpError) throw err;
-      if (outerSignal?.aborted) throw new Error('aborted');
+      if (outerSignal?.aborted) throw new Error('aborted', { cause: err });
       lastErr = err;
       if (attempt < attempts) {
         const backoff = Math.min(10_000, 400 * 2 ** (attempt - 1)) + Math.random() * 200;
