@@ -21,6 +21,10 @@ Node.js 20 or newer. The unit tests run offline: Spotify and Deezer are mocked a
 
 To run the server from source inside a host, register `node <repo>/dist/index.js` after `npm run build`, or `npx tsx src/index.ts` for a dev loop.
 
+## Working with an AI assistant
+
+`CLAUDE.md` at the repo root holds the constraints and conventions an assistant needs, and `.claude/skills/` has step-by-step skills for releases (`release`), live verification (`verify-live`), adding features (`add-feature`), Dependabot PRs (`dependabot-triage`) and API breakage (`api-check`). They are written for Claude Code but read fine as human checklists.
+
 ## Ground rules
 
 - **Only Spotify endpoints that Development Mode apps can call.** No recommendations, related artists, top tracks, audio features, batch fetches or Spotify-made playlists. If a feature needs discovery data, get it from Deezer (keyless) or Last.fm (optional key). `src/sources/spotify.ts` has the verified list in its header.

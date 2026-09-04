@@ -10,8 +10,9 @@ coverage/
 .env.*
 *.log
 
-# AI assistant / editor state (machine-local, never shared)
-.claude/
+# AI assistant / editor state (machine-local, never shared). .claude/skills and CLAUDE.md are shared on purpose.
+.claude/settings.local.json
+.claude/*.local.*
 .serena/
 .cursor/
 .vscode/
