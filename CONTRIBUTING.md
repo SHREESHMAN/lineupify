@@ -39,7 +39,7 @@ To run the server from source inside a host, register `node <repo>/dist/index.js
 
 ## Releasing (maintainers)
 
-1. Update `CHANGELOG.md`, then `npm version minor` (or `patch`). This bumps `package.json`; copy the version into `manifest.json` and `server.json` in the same commit.
+1. Update `CHANGELOG.md`, then `npm version minor` (or `patch`). This bumps `package.json` and, through the `version` npm script, copies the number into `manifest.json` and `server.json` in the same commit.
 2. `git push --follow-tags`. The Release workflow runs the checks, publishes to npm through npm Trusted Publishing (OIDC: the package settings on npmjs.com name this repository and `release.yml` as the trusted publisher, so no token exists anywhere), builds the Claude Desktop `.mcpb` and attaches it to the GitHub release. If the version is already on npm the publish step is skipped.
 3. Update the MCP Registry entry: `mcp-publisher publish` with the `server.json` in the repo root (see https://github.com/modelcontextprotocol/registry).
 
