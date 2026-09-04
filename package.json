@@ -1,0 +1,81 @@
+{
+  "name": "lineupify-mcp",
+  "version": "0.2.0",
+  "description": "MCP server that builds Spotify playlists from festival lineups, genres, moods, similar artists, other playlists or a blend of several people's taste. Bring your own Spotify client ID.",
+  "license": "MIT",
+  "author": {
+    "name": "SHREESHMAN",
+    "email": "shreeshhi@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shreeshman/lineupify.git"
+  },
+  "homepage": "https://github.com/shreeshman/lineupify#readme",
+  "bugs": {
+    "url": "https://github.com/shreeshman/lineupify/issues"
+  },
+  "mcpName": "io.github.shreeshman/lineupify",
+  "type": "module",
+  "bin": {
+    "lineupify-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "docs"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run test/unit",
+    "test:watch": "vitest test/unit",
+    "test:live": "vitest run test/live",
+    "smoke:spotify": "tsx test/smoke/spotify.ts",
+    "lint": "eslint src test",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "bundle:mcpb": "node scripts/build-mcpb.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "spotify",
+    "playlist",
+    "festival",
+    "lineup",
+    "claude",
+    "playlist-generator",
+    "recommendations",
+    "deezer",
+    "lastfm",
+    "blend"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "open": "^10.1.0",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  },
+  "overrides": {
+    "zod": "$zod"
+  }
+}

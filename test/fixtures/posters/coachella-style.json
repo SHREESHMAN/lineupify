@@ -1,0 +1,33 @@
+{
+  "description": "US-style weekend poster: WEEKEND headers, 'APRIL 10-12, 2026' date lines, plain day names, no stages, very dense undercard lines.",
+  "tiered": true,
+  "minArtists": 30,
+  "mustContain": [
+    "LADY GAGA", "MISSY ELLIOTT", "FKA TWIGS", "GREEN DAY", "CHARLI XCX", "TRAVIS SCOTT",
+    "YO GABBA GABBA!", "ABOVE & BEYOND", "POST MALONE", "MEGAN THEE STALLION", "ENHYPEN", "LISA"
+  ],
+  "mustNotContain": [
+    "WEEKEND 1", "WEEKEND 2", "APRIL 10-12, 2026", "APRIL 17-19, 2026", "FRIDAY", "SATURDAY", "SUNDAY",
+    "AND MANY MORE", "SOLD OUT", "COACHELLA.COM"
+  ],
+  "discarded": ["WEEKEND 1", "APRIL 10-12, 2026", "FRIDAY", "SATURDAY", "SUNDAY", "AND MANY MORE", "WEEKEND 2", "APRIL 17-19, 2026", "SOLD OUT", "COACHELLA.COM"],
+  "stagesDetected": [],
+  "daysInclude": ["friday", "saturday", "sunday"],
+  "days": {
+    "LADY GAGA": "friday",
+    "JULIA HOLTER": "friday",
+    "GREEN DAY": "saturday",
+    "CHARLI XCX": "saturday",
+    "POST MALONE": "sunday",
+    "ENHYPEN": "sunday"
+  },
+  "tiers": {
+    "LADY GAGA": "headliner",
+    "MISSY ELLIOTT": "sub",
+    "BENSON BOONE": "undercard",
+    "GREEN DAY": "headliner",
+    "TRAVIS SCOTT": "sub",
+    "POST MALONE": "headliner",
+    "ZEDD": "undercard"
+  }
+}

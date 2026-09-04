@@ -1,0 +1,45 @@
+{
+  "description": "Three-day, multi-stage poster with bullet separators. Comma names on their own line (TYLER, THE CREATOR / EARTH, WIND & FIRE) must survive the comma split.",
+  "tiered": true,
+  "minArtists": 30,
+  "mustContain": [
+    "THE 1975", "CHARLI XCX", "FONTAINES D.C.", "KNEECAP", "WET LEG (DJ SET)", "LIL NAS X",
+    "MURA MASA X SHYGIRL", "TYLER, THE CREATOR", "A$AP ROCKY", "EARTH, WIND & FIRE",
+    "SIMON & GARFUNKEL", "THE CURE", "CHAPPELL ROAN"
+  ],
+  "mustNotContain": [
+    "FRIDAY 26 JUNE", "SATURDAY 27 JUNE", "SUNDAY 28 JUNE", "PYRAMID STAGE", "OTHER STAGE",
+    "WEST HOLTS STAGE", "TBA", "+ SPECIAL GUESTS", "AND MANY MORE", "SOLD OUT",
+    "WWW.GLASTONBURYFESTIVALS.CO.UK", "TYLER", "THE CREATOR", "EARTH", "WIND & FIRE"
+  ],
+  "discarded": [
+    "FRIDAY 26 JUNE", "PYRAMID STAGE", "TBA", "OTHER STAGE", "WEST HOLTS STAGE",
+    "+ SPECIAL GUESTS", "AND MANY MORE", "SOLD OUT", "WWW.GLASTONBURYFESTIVALS.CO.UK"
+  ],
+  "daysDetected": ["friday", "saturday", "sunday"],
+  "stagesDetected": ["PYRAMID STAGE", "OTHER STAGE", "WEST HOLTS STAGE"],
+  "days": {
+    "THE 1975": "friday",
+    "LIL NAS X": "friday",
+    "TYLER, THE CREATOR": "saturday",
+    "EARTH, WIND & FIRE": "saturday",
+    "SIMON & GARFUNKEL": "sunday",
+    "KIM GORDON": "sunday"
+  },
+  "stages": {
+    "THE 1975": "PYRAMID STAGE",
+    "LIL NAS X": "OTHER STAGE",
+    "EARTH, WIND & FIRE": "WEST HOLTS STAGE"
+  },
+  "tiers": {
+    "THE 1975": "headliner",
+    "CHARLI XCX": "sub",
+    "LITTLE SIMZ": "undercard",
+    "LIL NAS X": "headliner",
+    "TYLER, THE CREATOR": "headliner",
+    "EARTH, WIND & FIRE": "headliner",
+    "SIMON & GARFUNKEL": "headliner",
+    "NEIL YOUNG": "sub",
+    "ELBOW": "undercard"
+  }
+}

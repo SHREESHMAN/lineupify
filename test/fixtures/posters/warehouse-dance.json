@@ -1,0 +1,36 @@
+{
+  "description": "Club/dance poster with DAY 1 / DAY 2 blocks, MAIN STAGE and THE DOME, the band '!!!' and a social handle. '!!!' is a real band and must be kept.",
+  "tiered": true,
+  "minArtists": 30,
+  "mustContain": [
+    "SKRILLEX B2B FOUR TET B2B FRED AGAIN..", "!!!", "HOT CHIP", "HAAI", "PEGGY GOU", "DISCLOSURE",
+    "MURA MASA X SHYGIRL", "WET LEG (DJ SET)", "BARRY CAN'T SWIM", "CHARLOTTE DE WITTE", "999999999"
+  ],
+  "mustNotContain": [
+    "DAY 1", "DAY 2", "MAIN STAGE", "THE DOME", "SPECIAL GUEST", "TBA", "MORE TBA", "18+",
+    "@WAREHOUSEPROJECT", "BOILER ROOM PRESENTS HAAI"
+  ],
+  "discarded": ["DAY 1", "MAIN STAGE", "SPECIAL GUEST", "THE DOME", "TBA", "DAY 2", "MORE TBA", "18+", "@WAREHOUSEPROJECT"],
+  "daysDetected": ["day 1", "day 2"],
+  "stagesDetected": ["MAIN STAGE", "THE DOME"],
+  "days": {
+    "PEGGY GOU": "day 1",
+    "HOT CHIP": "day 1",
+    "DISCLOSURE": "day 2",
+    "CHARLOTTE DE WITTE": "day 2"
+  },
+  "stages": {
+    "PEGGY GOU": "THE DOME",
+    "DISCLOSURE": "MAIN STAGE",
+    "ANETHA": "THE DOME"
+  },
+  "tiers": {
+    "SKRILLEX B2B FOUR TET B2B FRED AGAIN..": "headliner",
+    "PEGGY GOU": "headliner",
+    "DISCLOSURE": "headliner",
+    "CHARLOTTE DE WITTE": "headliner",
+    "HELENA HAUFF": "sub",
+    "MOXIE": "undercard",
+    "VTSS": "undercard"
+  }
+}

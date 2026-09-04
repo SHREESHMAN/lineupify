@@ -1,0 +1,32 @@
+{
+  "description": "Pipe-separated dense lines, no stage headers, b2b headliner and a 'presents' brand line. TICKETS ON SALE NOW is poster furniture and must never become an artist.",
+  "tiered": true,
+  "minArtists": 40,
+  "mustContain": [
+    "SKRILLEX B2B FOUR TET B2B FRED AGAIN..", "CHARLI XCX", "HAAI", "PEGGY GOU", "BICEP (LIVE)",
+    "LANA DEL REY", "LOS CAMPESINOS!", "THE JESUS AND MARY CHAIN", "AMYL AND THE SNIFFERS", "KNEECAP", "HOTLINE TNT"
+  ],
+  "mustNotContain": [
+    "THURSDAY 4 JUNE", "FRIDAY 5 JUNE", "SATURDAY 6 JUNE", "TBA", "TICKETS ON SALE NOW",
+    "WWW.PRIMAVERASOUND.COM", "BOILER ROOM PRESENTS HAAI", "BOILER ROOM"
+  ],
+  "discarded": ["THURSDAY 4 JUNE", "FRIDAY 5 JUNE", "SATURDAY 6 JUNE", "TBA", "TICKETS ON SALE NOW", "WWW.PRIMAVERASOUND.COM"],
+  "daysDetected": ["thursday", "friday", "saturday"],
+  "stagesDetected": [],
+  "days": {
+    "SKRILLEX B2B FOUR TET B2B FRED AGAIN..": "thursday",
+    "HAAI": "thursday",
+    "LANA DEL REY": "friday",
+    "SABRINA CARPENTER": "saturday",
+    "KNEECAP": "saturday"
+  },
+  "tiers": {
+    "SKRILLEX B2B FOUR TET B2B FRED AGAIN..": "headliner",
+    "CHARLI XCX": "sub",
+    "BICEP (LIVE)": "undercard",
+    "LANA DEL REY": "headliner",
+    "PULP": "sub",
+    "SABRINA CARPENTER": "headliner",
+    "DRY CLEANING": "undercard"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "description": "Abbreviated day headers (FRI 28 AUG), two stages per day, hashtag and bare-domain website lines. Sunflower Bean / Monolink look like 'sun'/'mon' but are artists.",
+  "tiered": true,
+  "minArtists": 28,
+  "mustContain": [
+    "TYLER, THE CREATOR", "LIL NAS X", "THE 1975", "KNEECAP", "FONTAINES D.C.", "ARCTIC MONKEYS",
+    "A$AP ROCKY", "CHARLI XCX", "WET LEG (DJ SET)", "SUNFLOWER BEAN", "MONOLINK", "THE DAMNED"
+  ],
+  "mustNotContain": [
+    "FRI 28 AUG", "SAT 29 AUG", "SUN 30 AUG", "MAIN STAGE", "FESTIVAL REPUBLIC STAGE",
+    "+ SPECIAL GUESTS", "AND MANY MORE", "TICKETS ON SALE", "#READINGFESTIVAL", "READINGFESTIVAL.COM",
+    "TYLER", "THE CREATOR"
+  ],
+  "discarded": ["FRI 28 AUG", "MAIN STAGE", "FESTIVAL REPUBLIC STAGE", "SAT 29 AUG", "SUN 30 AUG", "+ SPECIAL GUESTS", "AND MANY MORE", "TICKETS ON SALE", "#READINGFESTIVAL", "READINGFESTIVAL.COM"],
+  "daysDetected": ["friday", "saturday", "sunday"],
+  "stagesDetected": ["MAIN STAGE", "FESTIVAL REPUBLIC STAGE"],
+  "days": {
+    "TYLER, THE CREATOR": "friday",
+    "KNEECAP": "friday",
+    "FONTAINES D.C.": "saturday",
+    "CHARLI XCX": "sunday",
+    "MONOLINK": "sunday"
+  },
+  "stages": {
+    "KNEECAP": "FESTIVAL REPUBLIC STAGE",
+    "CHALK": "FESTIVAL REPUBLIC STAGE",
+    "FONTAINES D.C.": "MAIN STAGE"
+  },
+  "tiers": {
+    "TYLER, THE CREATOR": "headliner",
+    "LIL NAS X": "sub",
+    "CENTRAL CEE": "undercard",
+    "KNEECAP": "headliner",
+    "FONTAINES D.C.": "headliner",
+    "CHARLI XCX": "headliner",
+    "LOYLE CARNER": "undercard"
+  }
+}

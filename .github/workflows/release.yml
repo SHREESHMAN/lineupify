@@ -1,0 +1,51 @@
+# Publishes to npm with provenance and attaches the Claude Desktop bundle to a
+# GitHub release. Trigger: push a tag that matches package.json, e.g.
+#   npm version minor            # bumps package.json + manifest via the version script, creates the tag
+#   git push --follow-tags
+# First-time setup: add an npm automation token as the NPM_TOKEN repository secret
+# (Settings -> Secrets -> Actions). Once the package exists on npm you can switch
+# to trusted publishing (npm package settings -> Trusted publishers) and drop the token.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Tag must match package.json version
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          if [ "$v" != "$GITHUB_REF_NAME" ]; then echo "tag $GITHUB_REF_NAME != package version $v"; exit 1; fi
+      - name: Publish to npm (with provenance)
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Build Claude Desktop bundle
+        run: npm run bundle:mcpb
+      - name: GitHub release with the .mcpb attached
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" build/lineupify-*.mcpb --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" build/lineupify-*.mcpb --title "$GITHUB_REF_NAME" --generate-notes
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}

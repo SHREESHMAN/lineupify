@@ -1,0 +1,17 @@
+{
+  "description": "One name per line, no headers. Must not be tiered and must carry no day/stage.",
+  "tiered": false,
+  "minArtists": 15,
+  "exactCount": 15,
+  "mustContain": [
+    "ARCTIC MONKEYS", "FONTAINES D.C.", "THE 1975", "KNEECAP", "WET LEG (DJ SET)", "SUNFLOWER BEAN",
+    "MONOLINK", "LIL NAS X", "CHARLI XCX", "TYLER, THE CREATOR", "EARTH, WIND & FIRE",
+    "SIMON & GARFUNKEL", "A$AP ROCKY", "MURA MASA X SHYGIRL", "FRED AGAIN.."
+  ],
+  "mustNotContain": ["TYLER", "THE CREATOR", "EARTH", "WIND & FIRE"],
+  "discarded": [],
+  "daysDetected": [],
+  "stagesDetected": [],
+  "noTiers": true,
+  "noDays": true
+}

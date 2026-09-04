@@ -1,0 +1,25 @@
+# build output
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# secrets and local config
+.env
+.env.*
+*.log
+
+# AI assistant / editor state (machine-local, never shared)
+.claude/
+.serena/
+.cursor/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# local planning notes, not part of the repo
+notes/
