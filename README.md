@@ -85,7 +85,25 @@ The one step nobody can skip is creating a Spotify app, because Spotify only let
 
 Spotify only lets a new app serve its owner, and that owner needs Premium. If that is not you, skip steps 1 and 2 entirely: add Lineupify to your host ([docs/hosts.md](docs/hosts.md)) and ask for a playlist. With no Spotify login, drafts build on **Deezer** automatically (or say "use Deezer"; the option is `provider: "deezer"`). Deezer's public API is keyless, so there is nothing to create, paste or approve.
 
-What works in Deezer mode: every seed except your own Spotify taste, every filter, reading, analysing, comparing and merging Deezer playlists and drafts, editing, and all exports. What does not: publishing into an account. Deezer stopped issuing API credentials to new apps in 2025, so no tool can write to a Deezer account today. Instead, `export_draft` with `format: "links"` gives one Deezer link per line, which free transfer tools such as TuneMyMusic or Soundiiz paste straight into a Deezer, Apple Music or YouTube Music playlist. If Deezer reopens its API, publishing will be added.
+What works in Deezer mode: every seed except your own Spotify taste, every filter, reading, analysing, comparing and merging Deezer playlists and drafts, editing, and all exports. What does not: publishing into an account. Deezer stopped issuing API credentials to new apps in 2025, so no tool can write to a Deezer account today. If Deezer reopens its API, publishing will be added.
+
+**Getting a Deezer draft into your Deezer (or Apple Music, YouTube Music) account** takes one paste:
+
+1. Ask for the export: "export this draft as links" (`export_draft`, `format: "links"`; `"text"` gives "Artist - Title" lines instead).
+2. Open [TuneMyMusic](https://www.tunemymusic.com) or [Soundiiz](https://soundiiz.com), choose *import from text* (TuneMyMusic: *Let's start → Upload text*; Soundiiz: *Import playlist → From text*), and paste the list.
+3. Pick Deezer as the destination and confirm. The tool logs into your Deezer account itself; nothing about your account ever passes through Lineupify.
+
+Both tools have free tiers that cover a normal playlist.
+
+### Spotify without Premium: borrow an app
+
+Spotify's Premium rule applies to the person who *owns* the developer app, not to everyone who uses it. An owner can add up to four other people by email under *User Management* in the dashboard (five users per app in total), and those people log in with their own accounts, free ones included. So if someone you know has Premium:
+
+1. They create the app as in step 1 above and add your Spotify account email under *User Management*.
+2. They give you the Client ID (it is not a secret; the secret is never used).
+3. You run `npx -y lineupify-mcp init` with that Client ID and log in as yourself. Your tokens stay on your machine; the owner never sees your account.
+
+Two limits: an app serves five people at most at the time of writing, and the owner's daily API quota is shared across all of them and all of the owner's apps. Handing the Client ID to someone who is not on the User Management list does nothing; their login fails with a 403. Fine for friends and family; not a way to serve strangers, which Spotify's terms also rule out. Details: [docs/setup-spotify.md](docs/setup-spotify.md#using-a-friends-app-no-premium).
 
 ## What a conversation looks like
 
@@ -226,7 +244,7 @@ stateDiagram-v2
 | `merge_playlists` | One deduplicated draft from 1-6 Spotify playlists, drafts or `library`, keeping the actual tracks. | `playlists`, `name`, `order`, `excludeExplicit`, `maxTracks` |
 | `expand_playlist` | More songs by the artists of a playlist, minus what it already has. | `playlist`, `limitArtists`, `tracksPerArtist`, plus the build options |
 | `refresh_taste` | New songs from your own top and followed artists, minus your liked songs. | `limitArtists`, `tracksPerArtist`, `excludePlaylists`, plus the build options |
-| `export_draft` | Returns the draft as Markdown, CSV (with ISRC, year, tempo, provider, URLs), M3U, or `links` (one track URL per line, what transfer tools accept). With `save: true` writes a file under `~/.lineupify/exports/`. | `draftId`, `format`, `save`, `overwrite` |
+| `export_draft` | Returns the draft as Markdown, CSV (with ISRC, year, tempo, provider, URLs), M3U, `links` (one track URL per line) or `text` ("Artist - Title" per line); the last two are what transfer tools accept. With `save: true` writes a file under `~/.lineupify/exports/`. | `draftId`, `format`, `save`, `overwrite` |
 | `list_drafts` | Lists saved drafts, newest first, with status and whether they were published. | none |
 | `delete_draft` | Deletes a draft from disk. The Spotify playlist is not touched. | `draftId` |
 

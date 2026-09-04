@@ -459,6 +459,9 @@ describe('deezer provider (no Spotify account)', () => {
     expect(csv).toContain('"deezer","","https://www.deezer.com/track/101"');
     const m3u = textOf(await drafts.exportDraft({ draftId: d.id, format: 'm3u' }));
     expect(m3u).toContain('https://www.deezer.com/track/101');
+    const txt = textOf(await drafts.exportDraft({ draftId: d.id, format: 'text' })).split('\n');
+    expect(txt.length).toBe(4);
+    expect(txt).toContain('Fred again.. - Marea');
   });
 
   it('refuses Spotify-only seeds, exclusions and discoveryOnly up front', async () => {

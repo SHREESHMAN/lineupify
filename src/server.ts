@@ -363,8 +363,8 @@ export function buildServer(): McpServer {
     'export_draft',
     {
       title: 'Export draft',
-      description: 'Return the draft as markdown, CSV, M3U, or links (one track URL per line, the format playlist transfer tools accept) for sharing or for taking a Deezer draft into any service. With save: true the file is written under ~/.lineupify/exports/ (never elsewhere).',
-      inputSchema: z.object({ draftId: z.string(), format: z.enum(['markdown', 'csv', 'm3u', 'links']).optional(), save: z.boolean().optional(), overwrite: z.boolean().optional() }),
+      description: 'Return the draft as markdown, CSV, M3U, links (one track URL per line) or text ("Artist - Title" per line). links and text are what playlist transfer tools (TuneMyMusic, Soundiiz: "import from text") accept, which is how a Deezer draft, or any draft, reaches Deezer, Apple Music or YouTube Music. With save: true the file is written under ~/.lineupify/exports/ (never elsewhere).',
+      inputSchema: z.object({ draftId: z.string(), format: z.enum(['markdown', 'csv', 'm3u', 'links', 'text']).optional(), save: z.boolean().optional(), overwrite: z.boolean().optional() }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     guard(exportDraft),

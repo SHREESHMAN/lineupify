@@ -299,7 +299,7 @@ export function trackLink(t: DraftTrack): string {
   return t.url ?? (t.deezerTrackId ? `https://www.deezer.com/track/${t.deezerTrackId}` : `https://open.spotify.com/track/${t.spotifyId}`);
 }
 
-export async function exportDraft(args: { draftId: string; format?: 'markdown' | 'csv' | 'm3u' | 'links'; save?: boolean; overwrite?: boolean }) {
+export async function exportDraft(args: { draftId: string; format?: 'markdown' | 'csv' | 'm3u' | 'links' | 'text'; save?: boolean; overwrite?: boolean }) {
   const d = await getDraft(args.draftId);
   const fmt = args.format ?? 'markdown';
   const artistName = new Map(d.artists.map((a) => [a.key, a.name]));
@@ -316,11 +316,14 @@ export async function exportDraft(args: { draftId: string; format?: 'markdown' |
   } else if (fmt === 'links') {
     // One link per line: what playlist transfer tools (TuneMyMusic, Soundiiz) accept as a paste.
     body = d.tracks.map(trackLink).join('\n');
+  } else if (fmt === 'text') {
+    // "Artist - Title" per line: the other paste format transfer tools accept, and readable by anyone.
+    body = d.tracks.map((t) => `${artistName.get(t.artistKey) ?? t.artists[0]} - ${t.name}`).join('\n');
   } else {
     body = [`# ${d.name}`, '', `${d.tracks.length} tracks · ${fmtDuration(totalDurationMs(d))}`, '', ...d.tracks.map((t, i) => `${i + 1}. **${artistName.get(t.artistKey) ?? t.artists[0]}** – ${t.name}${t.album ? ` _(${t.album})_` : ''} · ${fmtDuration(t.durationMs)}`)].join('\n');
   }
   if (!args.save) return text(body.length > 60_000 ? body.slice(0, 60_000) + '\n… truncated; use save: true for the full file' : body);
-  const ext = fmt === 'markdown' ? 'md' : fmt === 'links' ? 'txt' : fmt;
+  const ext = fmt === 'markdown' ? 'md' : fmt === 'links' || fmt === 'text' ? 'txt' : fmt;
   const file = path.join(paths.exportsDir(), `${safeFileName(d.name, d.id)}.${ext}`);
   await fs.mkdir(paths.exportsDir(), { recursive: true });
   const exists = await fs.stat(file).then(() => true, () => false);

@@ -91,6 +91,15 @@ If a user is not listed here, every API call for them fails with HTTP 403 (`SPOT
 
 If you do not have Premium you cannot own a working app, but someone with Premium can add you under User Management on theirs. You then use their Client ID; the playlist is still created in **your** account, because you sign in as yourself during `connect`.
 
+What the owner should know:
+
+- The Client ID is not a secret and is safe to send; there is no client secret in this flow. It is the User Management list, not the ID, that decides who can log in.
+- Each added person keeps their own tokens on their own machine. The owner never sees anyone else's account or playlists.
+- The owner's **daily API quota is shared** by everyone on every app they own, so a heavy user can pause the others' builds until the next day (`SPOTIFY_QUOTA_EXCEEDED`).
+- Creating several apps to add more than a handful of people is against the spirit of Spotify's developer terms and does not scale anyway (same shared quota, same owner). Point strangers at their own app, or at Deezer mode.
+
+No Premium and nobody to borrow from? Skip Spotify entirely: without a login Lineupify builds on Deezer, and `export_draft` plus a free transfer tool gets the list into any service (see *Deezer mode* in the README).
+
 ## "You have reached the app limit"
 
 Spotify caps how many Development Mode apps one account can have. If the dashboard refuses to create a new app:
