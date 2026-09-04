@@ -1,0 +1,4 @@
+# Store text with LF line endings regardless of OS; Windows checkouts keep LF too.
+* text=auto eol=lf
+*.mcpb binary
+*.png binary
