@@ -11,6 +11,7 @@ import { LineupifyError } from '../types.js';
 import { http as request, HttpError } from '../infra/http.js';
 import { log } from '../infra/log.js';
 import { paths, readJson, waitLock, writeJsonAtomic } from '../infra/store.js';
+import { clean } from '../infra/text.js';
 import { promises as fs } from 'node:fs';
 
 export const SPOTIFY_API_SNAPSHOT = '2026-07';
@@ -241,14 +242,21 @@ export async function startAuth(clientId: string, fixedPort: number): Promise<{ 
     const err = u.searchParams.get('error');
     const code = u.searchParams.get('code');
     const st = u.searchParams.get('state');
-    if (err) {
-      res.writeHead(200, { 'Content-Type': 'text/html' }).end(PAGE('Login cancelled', `Spotify reported: ${err}. You can close this tab.`));
-      settle(new LineupifyError('AUTH_DENIED', `Spotify login failed: ${err}`));
+    // Only a callback carrying this attempt's state is Spotify's answer. Anything
+    // else (an old tab, another program, an <img src> on any web page open during
+    // the login window) is answered and ignored so it cannot cancel the login.
+    const stray = () => res.writeHead(400, { 'Content-Type': 'text/html' }).end(PAGE('Login failed', 'This is not the login Lineupify is waiting for. Go back to your assistant and use the link it gave you.'));
+    if (st !== state) {
+      stray();
       return;
     }
-    if (!code || st !== state) {
-      res.writeHead(400, { 'Content-Type': 'text/html' }).end(PAGE('Login failed', 'State mismatch. Start the login again from Lineupify.'));
-      settle(new LineupifyError('AUTH_STATE_MISMATCH', 'OAuth state mismatch.'));
+    if (err) {
+      res.writeHead(200, { 'Content-Type': 'text/html' }).end(PAGE('Login cancelled', `Spotify reported: ${escapeHtml(clean(err, 80))}. You can close this tab.`));
+      settle(new LineupifyError('AUTH_DENIED', `Spotify login failed: ${clean(err, 80)}`));
+      return;
+    }
+    if (!code) {
+      stray();
       return;
     }
     try {

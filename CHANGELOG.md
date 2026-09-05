@@ -6,6 +6,7 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 ### Security
 
+- The loopback login callback on `127.0.0.1` reflected Spotify's `error` parameter into the page unescaped and ended the pending login on any request, so a web page open during the 5-minute window could cancel it with an `<img src>` (or run script on the loopback origin). The callback now answers 400 and keeps waiting unless the request carries the login's `state`; the error text is escaped and length-capped. `AUTH_STATE_MISMATCH` is no longer raised.
 - Release workflow: `actions/checkout` and `actions/setup-node` are pinned to commit SHAs (Dependabot keeps them current), npm is installed at an exact version instead of `latest`, and a manual run is accepted only from `main` or a version tag. The job holds the npm publishing token, so its inputs are no longer mutable.
 
 ### Fixed

@@ -22,9 +22,8 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 | `BAD_PORT` | `redirectPort` is outside 1024-65535. | Pick a port in that range, or `0` to go back to the default 8765. |
 | `NOTHING_TO_SAVE` | `setup` was called without `clientId`, `redirectPort` or `lastfmApiKey`. | Pass at least one. |
 | `REDIRECT_PORT_BUSY` | The fixed port from `SPOTIFY_REDIRECT_PORT` / `setup redirectPort` is in use. | Close the other program, choose another port (and register it in the dashboard), or unset the port to use a random one. |
-| `AUTH_TIMEOUT` | Nobody completed the login within 5 minutes. | Call `connect` again and finish the login in the browser. |
+| `AUTH_TIMEOUT` | Nobody completed the login within 5 minutes. A callback that does not carry this login's state (an old tab, a second attempt, another program on the port) is answered with 400 and ignored, so it cannot end the login early. | Call `connect` again and finish the login in the browser, using the URL it returns. |
 | `AUTH_DENIED` | You clicked *Cancel* on the Spotify consent page, or Spotify reported an error. | Call `connect` again and click *Agree*. |
-| `AUTH_STATE_MISMATCH` | The callback did not match the login Lineupify started (old tab, second attempt, or something else on the port). | Close old Spotify tabs and call `connect` again; use the URL it returns. |
 | `SPOTIFY_AUTH_FAILED` | The token exchange failed for another reason (message contains Spotify's error). | Usually an incorrect redirect URI in the dashboard; see "Invalid redirect URI" below. Retry `connect`. |
 | `SPOTIFY_NOT_CONNECTED` | No tokens saved. | Call `connect`. |
 | `TOKEN_EXPIRED_RECONNECT` | The refresh token is older than 6 months, or Spotify refused it (`invalid_grant`). | Call `connect` with `force: true`, or run `lineupify-mcp auth --force`. |
