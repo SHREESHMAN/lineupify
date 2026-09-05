@@ -12,7 +12,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": false,
-    "sourceMap": true,
+    "sourceMap": false,
     "resolveJsonModule": true,
     "types": ["node"]
   },

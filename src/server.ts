@@ -313,7 +313,7 @@ export function buildServer(): McpServer {
   server.registerTool(
     'search_tracks',
     {
-      title: 'Search Spotify tracks',
+      title: 'Search tracks',
       description: 'Search Spotify (or Deezer, for a Deezer draft or when Spotify is not connected) for a track to add manually. Supports filters like "track:Marea artist:Fred again". Returns URIs for edit_draft add_track.',
       inputSchema: z.object({ query: z.string().min(1).max(120), limit: z.number().int().min(1).max(10).optional(), provider: PROVIDER.optional().describe('Match the draft you will add to') }),
       annotations: { readOnlyHint: true, ...net },

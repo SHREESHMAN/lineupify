@@ -13,6 +13,8 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 ### Fixed
 
+- `search_tracks` is titled "Search tracks" (it was "Search Spotify tracks", which is what Claude Desktop shows in the permission prompt, even for a Deezer draft).
+- The npm package no longer ships `.map` files: their `sources` pointed at `../src`, which is not published, and they roughly doubled the tarball.
 - `docs/setup-spotify.md` lists all eight scopes the consent screen shows (it named four).
 - README and SECURITY.md no longer claim external text "cannot pose as an instruction"; they say what the cleaning does and point at the switches that actually limit what a misled assistant can do.
 - `clean()` no longer strips U+200C (ZWNJ) and U+200D (ZWJ), so Persian, Urdu and Indic names and emoji sequences are shown intact, and artist names reach the Deezer search unbroken (they were being split into separate words, which made some artists resolve wrongly or not at all). Zero-width spaces, bidi marks and overrides are now removed outright instead of being replaced by a space.
