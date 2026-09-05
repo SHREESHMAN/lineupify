@@ -2,6 +2,12 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- `lineupify-mcp install` (and `init`) refused to touch a host config that is not valid JSON instead of silently replacing it with a Lineupify-only one. A trailing comma in `claude_desktop_config.json` used to make every other MCP server disappear (a `.bak` was kept, but nothing said so). New error `HOST_CONFIG_INVALID`; the CLI prints the snippet to paste by hand.
+
 ## 0.4.1 - 2026-09-04
 
 ### Changed

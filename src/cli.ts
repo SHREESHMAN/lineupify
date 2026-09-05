@@ -10,7 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { LineupifyError, type Config } from './types.js';
 import { loadConfig, resolveSettings, saveConfig } from './infra/config.js';
-import { ensureDirs, paths, readJson, writeJsonAtomic } from './infra/store.js';
+import { ensureDirs, paths, writeJsonAtomic } from './infra/store.js';
 import { http } from './infra/http.js';
 import { artistCache, flushAllCaches } from './infra/cache.js';
 import { fold } from './engine/normalize.js';
@@ -244,8 +244,24 @@ function claudeDesktopConfigPath(): string {
   return path.join(os.homedir(), '.config', 'Claude', 'claude_desktop_config.json');
 }
 
-async function mergeMcpJson(file: string): Promise<void> {
-  const existing = (await readJson<{ mcpServers?: Record<string, unknown> }>(file)) ?? {};
+/** Add (or replace) the lineupify entry in a host's mcpServers JSON. Exported for tests. */
+export async function mergeMcpJson(file: string): Promise<void> {
+  // Parse here rather than through readJson: that helper turns a corrupt file into
+  // "no file", and merging into an empty object would drop the user's other servers.
+  let existing: { mcpServers?: Record<string, unknown> } = {};
+  const raw = await fs.readFile(file, 'utf8').catch((err: NodeJS.ErrnoException) => {
+    if (err.code === 'ENOENT') return undefined;
+    throw err;
+  });
+  if (raw !== undefined) {
+    try {
+      const parsed: unknown = JSON.parse(raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('top level is not an object');
+      existing = parsed as { mcpServers?: Record<string, unknown> };
+    } catch (err) {
+      throw new LineupifyError('HOST_CONFIG_INVALID', `${file} is not valid JSON (${err instanceof Error ? err.message : String(err)}). Nothing was changed.`, 'Fix the file (a trailing comma is the usual cause) and run install again, or paste the snippet from `lineupify-mcp doctor` into it by hand.');
+    }
+  }
   const settings = await resolveSettings();
   const { command, args } = serverCommand();
   const entry: Record<string, unknown> = { command, args };
@@ -272,15 +288,19 @@ async function detectHosts(): Promise<Host[]> {
 
 /** Write Lineupify into one host's config. Returns what to tell the user. */
 async function installInto(host: Host): Promise<{ ok: boolean; message: string }> {
-  if (host === 'claude-desktop') {
-    const file = claudeDesktopConfigPath();
-    await mergeMcpJson(file);
-    return { ok: true, message: `Added "lineupify" to ${file} (backup: ${file}.bak). Quit Claude Desktop fully (system tray / dock) and reopen it.` };
-  }
-  if (host === 'cursor') {
-    const file = path.join(os.homedir(), '.cursor', 'mcp.json');
-    await mergeMcpJson(file);
-    return { ok: true, message: `Added "lineupify" to ${file}. Restart Cursor.` };
+  if (host === 'claude-desktop' || host === 'cursor') {
+    const file = host === 'claude-desktop' ? claudeDesktopConfigPath() : path.join(os.homedir(), '.cursor', 'mcp.json');
+    try {
+      await mergeMcpJson(file);
+    } catch (err) {
+      if (err instanceof LineupifyError && err.code === 'HOST_CONFIG_INVALID') return { ok: false, message: `${err.message}
+${err.hint}
+
+${configSnippets()}` };
+      throw err;
+    }
+    if (host === 'claude-desktop') return { ok: true, message: `Added "lineupify" to ${file} (backup: ${file}.bak). Quit Claude Desktop fully (system tray / dock) and reopen it.` };
+    return { ok: true, message: `Added "lineupify" to ${file} (backup: ${file}.bak). Restart Cursor.` };
   }
   const { command, args: a } = serverCommand();
   const q = (x: string) => (/\s/.test(x) ? `"${x}"` : x);

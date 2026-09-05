@@ -86,6 +86,27 @@ describe('cli', () => {
     expect(out.at(-1)).toContain('you have');
   });
 
+  it('install keeps the other servers in a valid host config', async () => {
+    const file = path.join(home, 'host', 'claude_desktop_config.json');
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, JSON.stringify({ mcpServers: { filesystem: { command: 'npx', args: ['-y', 'fs'] } }, other: 1 }), 'utf8');
+    await cli.mergeMcpJson(file);
+    const merged = JSON.parse(await fs.readFile(file, 'utf8')) as { mcpServers: Record<string, unknown>; other: number };
+    expect(Object.keys(merged.mcpServers).sort()).toEqual(['filesystem', 'lineupify']);
+    expect(merged.other).toBe(1);
+    expect(await fs.stat(`${file}.bak`).then(() => true, () => false)).toBe(true);
+  });
+
+  it('install refuses to rewrite a host config that is not valid JSON', async () => {
+    const file = path.join(home, 'host', 'broken', 'claude_desktop_config.json');
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    const broken = '{ "mcpServers": { "filesystem": { "command": "npx" }, } }';
+    await fs.writeFile(file, broken, 'utf8');
+    await expect(cli.mergeMcpJson(file)).rejects.toMatchObject({ code: 'HOST_CONFIG_INVALID' });
+    expect(await fs.readFile(file, 'utf8')).toBe(broken);
+    expect(await fs.stat(`${file}.bak`).then(() => true, () => false)).toBe(false);
+  });
+
   it('logout forgets the login and can purge the data folder', async () => {
     out.length = 0;
     expect(await cli.runCli('logout', [])).toBe(0);
