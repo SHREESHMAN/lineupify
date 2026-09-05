@@ -69,8 +69,8 @@ export async function ensureNotLockedElsewhere(id: string): Promise<void> {
 export async function maybeResume(d: Draft): Promise<void> {
   if (d.status === 'ready' || d.status === 'failed') return;
   if (!hasPendingWork(d)) return;
-  const tokens = await loadTokens();
-  if (!tokens) return;
+  // Deezer drafts never touch Spotify, so a missing login must not strand them.
+  if ((d.provider ?? 'spotify') === 'spotify' && !(await loadTokens())) return;
   const settings = await resolveSettings();
   const r = await startJob(d.id, { lastfmApiKey: settings.lastfmApiKey }, liveDraft(d.id) ?? d);
   if (r === 'started') log.info(`resumed build of ${d.id}`);

@@ -145,7 +145,7 @@ const playlistTools = await import('../../src/tools/playlists.js');
 const drafts = await import('../../src/tools/drafts.js');
 const playlist = await import('../../src/tools/playlist.js');
 const jobs = await import('../../src/engine/jobs.js');
-const { loadDraft } = await import('../../src/engine/draft.js');
+const { loadDraft, saveDraft } = await import('../../src/engine/draft.js');
 
 function textOf(r: { content: { type: string; text?: string }[]; isError?: boolean }): string {
   return r.content.map((c) => c.text ?? '').join('\n');
@@ -462,6 +462,16 @@ describe('deezer provider (no Spotify account)', () => {
     const txt = textOf(await drafts.exportDraft({ draftId: d.id, format: 'text' })).split('\n');
     expect(txt.length).toBe(4);
     expect(txt).toContain('Fred again.. - Marea');
+  });
+
+  it('an interrupted Deezer build resumes from get_draft without a Spotify login', async () => {
+    const d = await built(await drafts.createDraft({ provider: 'deezer', artists: ['Overmono'], tracksPerArtist: 1 }));
+    expect(d.tracks.map((t) => t.name)).toEqual(['So U Kno']);
+    // A host shutdown mid-build leaves the draft paused on disk with the artist still pending.
+    await saveDraft({ ...d, status: 'paused', error: 'build interrupted; call get_draft to resume', tracks: [], artists: d.artists.map((a) => ({ ...a, status: 'pending' as const })) });
+    const resumed = textOf(await drafts.getDraftTool({ draftId: d.id, waitSeconds: 10 }));
+    expect(resumed).toContain('status ready');
+    expect((await loadDraft(d.id))!.tracks.map((t) => t.name)).toEqual(['So U Kno']);
   });
 
   it('refuses Spotify-only seeds, exclusions and discoveryOnly up front', async () => {
