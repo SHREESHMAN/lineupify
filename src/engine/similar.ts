@@ -11,7 +11,7 @@ import { LineupifyError } from '../types.js';
 import { log } from '../infra/log.js';
 import { clean } from '../infra/text.js';
 import { fold, stripTitleDecorations } from './normalize.js';
-import { isAbort } from './resolve.js';
+import { isAbort, isTransient } from './resolve.js';
 import { songKey } from './select.js';
 import * as lastfm from '../sources/lastfm.js';
 import * as lb from '../sources/listenbrainz.js';
@@ -152,7 +152,7 @@ async function neighboursOf(song: SeedSong, limit: number, ctx: SimilarContext):
       if (sim.length) lists.push({ source: 'lastfm', songs: sim.map((s) => ({ title: s.title, artist: s.artist, score: s.match, mbid: s.mbid })) });
       notes.push(`Last.fm ${sim.length}`);
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.info('lastfm similar tracks failed', String(err));
       notes.push('Last.fm error');
     }
@@ -166,7 +166,7 @@ async function neighboursOf(song: SeedSong, limit: number, ctx: SimilarContext):
       notes.push(`ListenBrainz ${rows.length}`);
     } else notes.push('ListenBrainz: recording unknown to MusicBrainz');
   } catch (err) {
-    if (isAbort(err)) throw err;
+    if (isAbort(err) || isTransient(err)) throw err;
     log.info('listenbrainz similar recordings failed', String(err));
     notes.push('ListenBrainz error');
   }
@@ -186,7 +186,7 @@ export async function similarSongsSeed(seed: SeedSpec, limit: number, ctx: Simil
     try {
       t = await ctx.lookupTrack(ref);
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.info(`seed song lookup failed for "${ref}"`, String(err));
     }
     if (!t || !t.artists[0]?.name) {

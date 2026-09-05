@@ -44,6 +44,7 @@ for (const t of Object.values(catalog)) byIsrc[t.isrc!] = t;
 const playlistCalls: { created: { name: string; isPublic: boolean }[]; added: string[][]; replaced: string[][] } = { created: [], added: [], replaced: [] };
 let loggedOut = false;
 let quotaFail = false;
+let netFail = false;
 
 vi.mock('../../src/sources/spotify.js', () => ({
   SPOTIFY_API_SNAPSHOT: 'test',
@@ -124,7 +125,10 @@ vi.mock('../../src/sources/deezer.js', async (importOriginal) => {
   return {
     ...orig,
     searchArtists: async (q: string) => deezerArtists[q.toLowerCase()] ?? [],
-    artistTopTracks: async (id: number) => (deezerTops[id] ?? []).map((c) => ({ ...c })),
+    artistTopTracks: async (id: number) => {
+      if (netFail) throw new TypeError('fetch failed');
+      return (deezerTops[id] ?? []).map((c) => ({ ...c }));
+    },
     trackDetails: async (id: number) => ({ isrc: deezerIsrc[id], bpm: id === 101 ? 172 : id === 102 ? 120 : null }),
     relatedArtists: async (id: number) => (id === 1 ? [{ id: 2, name: 'Wet Leg', nbFan: 60_000 }, { id: 3, name: 'Skrillex', nbFan: 3_000_000 }] : []),
     chartArtists: async () => [{ id: 4, name: 'Four Tet', nbFan: 400_000 }],
@@ -397,6 +401,23 @@ describe('pause and resume', () => {
     const d = (await loadDraft(id))!;
     expect(d.tracks.map((t) => t.name)).toEqual(['So U Kno']);
     expect(d.artists.every((a) => a.status === 'resolved')).toBe(true);
+  });
+  it('a network error pauses the build instead of marking the artist not found, and get_draft resumes it', async () => {
+    // Overmono is in the artist cache from the test above, so the first call that can fail is the Deezer top-tracks fetch.
+    netFail = true;
+    const r = await drafts.createDraft({ artists: ['Overmono'], tracksPerArtist: 1 });
+    const id = textOf(r).match(/Draft (d_[a-z0-9]+)/)![1]!;
+    await jobs.waitForJob(id, 10_000);
+    const paused = (await loadDraft(id))!;
+    expect(paused.status).toBe('paused');
+    expect(paused.error).toContain('NETWORK_ERROR');
+    expect(paused.artists.every((a) => a.status === 'pending')).toBe(true);
+    expect(textOf(await drafts.getDraftTool({ draftId: id, view: 'unresolved' }))).not.toContain('fetch failed');
+
+    netFail = false;
+    const resumed = textOf(await drafts.getDraftTool({ draftId: id, waitSeconds: 10 }));
+    expect(resumed).toContain('status ready');
+    expect((await loadDraft(id))!.tracks.map((t) => t.name)).toEqual(['So U Kno']);
   });
 });
 

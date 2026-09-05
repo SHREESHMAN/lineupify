@@ -149,7 +149,8 @@ export async function http(url: string, opts: HttpOptions = {}): Promise<HttpRes
     } catch (err) {
       if (err instanceof HttpError) throw err;
       if (outerSignal?.aborted) throw new Error('aborted', { cause: err });
-      lastErr = err;
+      // Our own timer fired: report a timeout, not an abort, so callers can tell it from a cancelled build.
+      lastErr = ctrl.signal.aborted ? Object.assign(new Error(`timeout after ${timeoutMs}ms for ${url}`, { cause: err }), { name: 'TimeoutError' }) : err;
       if (attempt < attempts) {
         const backoff = Math.min(10_000, 400 * 2 ** (attempt - 1)) + Math.random() * 200;
         log.debug(`network error on ${url}, retry in ${Math.round(backoff)}ms`, String(err));

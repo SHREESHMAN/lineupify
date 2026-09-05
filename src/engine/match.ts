@@ -10,7 +10,7 @@ import { log } from '../infra/log.js';
 import { fold, normalizeIsrc, stripTitleDecorations, titleKey } from './normalize.js';
 import * as deezer from '../sources/deezer.js';
 import * as spotify from '../sources/spotify.js';
-import { isAbort } from './resolve.js';
+import { isAbort, isTransient } from './resolve.js';
 
 export interface MatchContext {
   userId: string;
@@ -78,7 +78,7 @@ async function enrichFromDeezer(c: Candidate, lead: string, ctx: MatchContext): 
     if (c.explicit === undefined) c.explicit = found.explicit;
     if (ctx.wantBpm) await ensureIsrc(c, ctx.signal, true);
   } catch (err) {
-    if (isAbort(err)) throw err;
+    if (isAbort(err) || isTransient(err)) throw err;
     log.debug(`deezer enrichment failed for ${lead} - ${c.title}`, String(err));
   }
 }
@@ -128,7 +128,7 @@ export async function ensureIsrc(c: Candidate, signal?: AbortSignal, wantBpm = f
         await deezerTrackCache.set(key, d);
       }
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.debug(`deezer track ${key} lookup failed`, String(err));
     }
   }

@@ -174,7 +174,7 @@ The draft changed between the `get_draft` you based the edit on and the `edit_dr
 
 ### The build stopped ("paused")
 
-`get_draft` shows `status paused` with the reason (`SPOTIFY_QUOTA_EXCEEDED`, `TOKEN_EXPIRED_RECONNECT`, a closed host, …). Fix the cause if needed, then call `get_draft` again: it resumes from the last checkpoint. Progress is saved after every artist, so nothing already fetched is repeated.
+`get_draft` shows `status paused` with the reason (`SPOTIFY_QUOTA_EXCEEDED`, `TOKEN_EXPIRED_RECONNECT`, `NETWORK_ERROR` when the connection dropped or a service kept answering 5xx, a closed host, …). Fix the cause if needed, then call `get_draft` again: it resumes from the last checkpoint. Progress is saved after every artist, so nothing already fetched is repeated.
 
 ### `status` says "refresh token expires in N days" or "EXPIRED"
 

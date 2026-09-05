@@ -11,7 +11,7 @@ import { artistCache } from '../infra/cache.js';
 import { log } from '../infra/log.js';
 import { clean } from '../infra/text.js';
 import { fold } from './normalize.js';
-import { isAbort } from './resolve.js';
+import { isAbort, isTransient } from './resolve.js';
 import { resolveSource } from './playlists.js';
 import * as deezer from '../sources/deezer.js';
 import * as lastfm from '../sources/lastfm.js';
@@ -145,7 +145,7 @@ async function deezerPlaylistSeed(query: string, limit: number, ctx: SeedContext
       const r = await deezer.playlistTracks(p.id, 100, ctx.signal);
       return { tracks: r.tracks, weight: 1 / (1 + i * 0.5), title: p.title };
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.info(`playlist ${p.id} read failed`, String(err));
       return { tracks: [], weight: 0, title: p.title };
     }
@@ -181,7 +181,7 @@ async function genreSeed(value: string, limit: number, ctx: SeedContext): Promis
         notes.push(`Last.fm tag "${clean(value, 30)}" (${tagged.length})`);
       }
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.info('lastfm tag lookup failed', String(err));
     }
   }
@@ -210,7 +210,7 @@ async function similarSeed(value: string, limit: number, ctx: SeedContext): Prom
         notes.push(`Last.fm similar (${sim.length})`);
       }
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.info('lastfm similar lookup failed', String(err));
     }
   }
@@ -236,7 +236,7 @@ async function chartSeed(limit: number, ctx: SeedContext): Promise<SeedResult> {
         notes.push(`Last.fm chart (${lf.length})`);
       }
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.info('lastfm chart lookup failed', String(err));
     }
   }
@@ -269,7 +269,7 @@ async function countrySeed(value: string, limit: number, ctx: SeedContext): Prom
         notes.push(`Last.fm listeners in ${name} (${geo.length})`);
       }
     } catch (err) {
-      if (isAbort(err)) throw err;
+      if (isAbort(err) || isTransient(err)) throw err;
       log.info('lastfm geo lookup failed', String(err));
     }
   }
@@ -353,7 +353,7 @@ async function blendSeed(seed: SeedSpec, limit: number, ctx: SeedContext): Promi
         const rel = await deezer.relatedArtists(dz.id, BLEND_RELATED_PER_ARTIST, ctx.signal);
         return rel.map((r, i) => ({ name: r.name, weight: (a.weight / (1 + i / 5)) * 0.5, deezerId: r.id, nbFan: r.nbFan }));
       } catch (err) {
-        if (isAbort(err)) throw err;
+        if (isAbort(err) || isTransient(err)) throw err;
         log.info(`related lookup failed for ${a.name}`, String(err));
         return [] as SeedArtist[];
       }

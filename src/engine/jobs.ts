@@ -12,7 +12,7 @@ import { lockAge, paths, tryLock, type LockHandle } from '../infra/store.js';
 import { flushAllCaches } from '../infra/cache.js';
 import { fold } from './normalize.js';
 import { applyOrder, hasPendingWork, loadDraft, makeTrackId, saveDraft, artistKeyFor } from './draft.js';
-import { collabParts, isAbort, resolveArtist, resolveOrSplit, type ResolveContext } from './resolve.js';
+import { collabParts, isAbort, isTransient, resolveArtist, resolveOrSplit, type ResolveContext } from './resolve.js';
 import { lookupTrack, matchCandidate } from './match.js';
 import { applyStepwiseCap, songKey, targetFor, trimToDuration } from './select.js';
 import { bpmAccepts, trackYear, yearAccepts } from './filters.js';
@@ -168,6 +168,7 @@ async function run(job: Job, settings: JobSettings): Promise<void> {
           } catch (err) {
             if (isAbort(err)) return;
             if (err instanceof LineupifyError && FATAL.includes(err.code)) throw err;
+            if (isTransient(err)) throw err;
             log.error(`artist "${a.name}" failed`, String(err));
             a.status = 'unresolved';
             a.reason = `error: ${err instanceof Error ? err.message : String(err)}`;
@@ -209,6 +210,12 @@ async function run(job: Job, settings: JobSettings): Promise<void> {
       draft.status = 'paused';
       draft.error = `${err.code}: ${err.message} ${err.hint ?? ''}`.trim();
       requeueShortArtists(draft);
+    } else if (isTransient(err)) {
+      // Connection trouble (offline laptop, DNS, a 5xx that outlived the retries): pause, never record it as fact.
+      draft.status = 'paused';
+      draft.error = `NETWORK_ERROR: ${clean(err instanceof Error ? err.message : String(err), 120)}. Check the connection, then call get_draft to resume.`;
+      requeueShortArtists(draft);
+      log.error(`draft ${draft.id} paused on a network error`, String(err));
     } else {
       draft.status = 'failed';
       draft.error = err instanceof Error ? `${(err as LineupifyError).code ?? 'ERROR'}: ${err.message}` : String(err);
@@ -332,6 +339,7 @@ async function expandSeeds(job: Job, settings: JobSettings, signal: AbortSignal)
     } catch (err) {
       if (isAbort(err)) throw err;
       if (err instanceof LineupifyError && FATAL.includes(err.code)) throw err;
+      if (isTransient(err)) throw err;
       seed.status = 'failed';
       seed.error = err instanceof LineupifyError ? `${err.message} ${err.hint ?? ''}`.trim() : err instanceof Error ? err.message : String(err);
       log.error(`seed ${seedLabel(seed)} failed`, seed.error);
@@ -367,6 +375,7 @@ async function resolveExclusions(job: Job, signal: AbortSignal): Promise<void> {
     } catch (err) {
       if (isAbort(err)) throw err;
       if (err instanceof LineupifyError && FATAL.includes(err.code)) throw err;
+      if (isTransient(err)) throw err;
       const msg = err instanceof Error ? err.message : String(err);
       notes.push(`${clean(ref, 30)}: could not read (${clean(msg, 80)})`);
       log.error(`excludeTracksFrom ${ref} failed`, msg);

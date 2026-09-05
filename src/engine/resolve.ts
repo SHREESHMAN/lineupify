@@ -5,6 +5,7 @@
  */
 import type { Candidate, ResolvedArtist, SourceName } from '../types.js';
 import { artistCache } from '../infra/cache.js';
+import { HttpError } from '../infra/http.js';
 import { log } from '../infra/log.js';
 import { fold, labelPresents, splitAmpersand, splitCollab, stripSetSuffix } from './normalize.js';
 import * as deezer from '../sources/deezer.js';
@@ -63,7 +64,7 @@ export async function resolveArtist(name: string, ctx: ResolveContext): Promise<
         await artistCache.set(fold(q), resolved);
         return { resolved, candidates: top, queriesTried: tried };
       } catch (err) {
-        if (isAbort(err)) throw err;
+        if (isAbort(err) || isTransient(err)) throw err;
         log.info(`deezer lookup failed for "${q}"`, String(err));
       }
     }
@@ -81,7 +82,7 @@ export async function resolveArtist(name: string, ctx: ResolveContext): Promise<
           return { resolved, candidates: tracks, queriesTried: tried };
         }
       } catch (err) {
-        if (isAbort(err)) throw err;
+        if (isAbort(err) || isTransient(err)) throw err;
         log.info(`lastfm lookup failed for "${q}"`, String(err));
       }
     }
@@ -101,7 +102,7 @@ export async function resolveArtist(name: string, ctx: ResolveContext): Promise<
         await artistCache.set(fold(q), resolved);
         return { resolved, candidates, queriesTried: tried };
       } catch (err) {
-        if (isAbort(err)) throw err;
+        if (isAbort(err) || isTransient(err)) throw err;
         log.info(`spotify artist lookup failed for "${q}"`, String(err));
       }
     }
@@ -116,7 +117,7 @@ async function candidatesFor(resolved: ResolvedArtist, query: string, ctx: Resol
     if (resolved.source === 'lastfm' && ctx.lastfmApiKey) return { candidates: (await lastfm.topTracks(ctx.lastfmApiKey, resolved.lastfmName ?? query, 30, ctx.signal)) ?? [] };
     if (resolved.spotifyArtistId && ctx.spotifyAvailable) return { candidates: await spotifyCandidates(resolved, ctx) };
   } catch (err) {
-    if (isAbort(err)) throw err;
+    if (isAbort(err) || isTransient(err)) throw err;
     log.info(`cached artist lookup failed for "${query}"`, String(err));
   }
   return { candidates: [] };
@@ -155,6 +156,22 @@ async function spotifyCandidates(resolved: ResolvedArtist, ctx: ResolveContext):
 
 export function isAbort(err: unknown): boolean {
   return err instanceof Error && (err.name === 'AbortError' || err.message === 'aborted');
+}
+
+const NET_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'ETIMEDOUT', 'EPIPE', 'ENETUNREACH', 'EHOSTUNREACH', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_SOCKET']);
+
+/**
+ * A failure of the connection rather than of the lookup: DNS, reset, timeout,
+ * or a 429 / 5xx that outlived the retries. These pause the build so it can
+ * resume later; they must never be recorded as "artist not found".
+ */
+export function isTransient(err: unknown): boolean {
+  if (err instanceof HttpError) return err.status === 429 || err.status >= 500;
+  if (!(err instanceof Error)) return false;
+  if (err.name === 'TimeoutError') return true;
+  if (err instanceof TypeError && /fetch failed/i.test(err.message)) return true;
+  const code = (err as NodeJS.ErrnoException).code ?? (err.cause as NodeJS.ErrnoException | undefined)?.code;
+  return typeof code === 'string' && NET_CODES.has(code);
 }
 
 export interface SplitResult {

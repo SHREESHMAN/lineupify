@@ -141,7 +141,7 @@ describe('http', () => {
   it('aborts a hung request after timeoutMs', async () => {
     fakeFetch([hang]);
     const t0 = Date.now();
-    await expect(http(URL_, { timeoutMs: 40, attempts: 1 })).rejects.toThrow(/abort/i);
+    await expect(http(URL_, { timeoutMs: 40, attempts: 1 })).rejects.toMatchObject({ name: 'TimeoutError', message: expect.stringMatching(/timeout after 40ms/) });
     expect(Date.now() - t0).toBeLessThan(1000);
     expect(calls.length).toBe(1);
     expect(calls[0]!.init?.signal?.aborted).toBe(true);
