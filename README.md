@@ -229,7 +229,7 @@ stateDiagram-v2
 | `status` | Call first. Shows connection state (and as whom), setup steps if needed, token expiry, defaults, drafts in progress, cache size, data directory and any read-only mode. | none |
 | `setup` | Saves the Spotify Client ID (and optionally a Last.fm key or a fixed redirect port) to `config.json`. | `clientId`, `lastfmApiKey`, `redirectPort` |
 | `connect` | Starts the Spotify login: opens the browser and returns the URL immediately. Pass `clientId` to save the app's Client ID in the same call. Refused while a draft is building. | `clientId`, `force` (switch account / re-login) |
-| `disconnect` | Forgets the Spotify login; with `purge: true` deletes the whole `~/.lineupify` folder. Tells you where to remove the app's access on Spotify's side. | `purge` |
+| `disconnect` | Forgets the Spotify login; with `purge: true` (plus `confirm: true`, after you agreed in the conversation) deletes the whole `~/.lineupify` folder. Refuses if that folder holds files Lineupify did not create. Tells you where to remove the app's access on Spotify's side. | `purge`, `confirm` |
 | `parse_lineup` | Turns raw poster text into a clean artist list with tiers, days and stages; drops dates, stage names and "tickets" lines. | `text` |
 | `create_draft` | Builds a draft from artists and/or seeds (genre, similar artist, chart, country, playlist, your taste, a blend). Returns within ~15 s; larger builds continue in the background. | `artists` and/or `seeds`, `lineup`, `name`, `tracksPerTier`, `tracksPerArtist`, `maxTracks`, `maxDurationMin`, `order`, `yearRange`, `bpmRange`, `skipCovers`, `excludeTracksFrom`, … (see below) |
 | `get_draft` | Shows a draft: `summary` (default), `tracks` (paged, with stable ids, year and tempo), `artists`, or `unresolved`. Waits for progress while building. Also resumes an interrupted build. | `draftId` (omit for latest), `view`, `offset`, `limit`, `waitSeconds` (max 25) |
@@ -456,7 +456,7 @@ Lineupify never deletes or unfollows a playlist, never changes your library or f
 **Switches.**
 
 - `LINEUPIFY_READ_ONLY=1` disables `create_playlist` and `update_playlist`; everything else works. Good for "analysis only" setups.
-- `disconnect` (tool) or `lineupify-mcp logout` forgets the login; `purge: true` / `--purge` deletes the whole data folder. Remove the app's access on Spotify's side at https://www.spotify.com/account/apps/.
+- `disconnect` (tool) or `lineupify-mcp logout` forgets the login; `purge: true` (with `confirm: true`) / `--purge` deletes the whole data folder, and refuses if the folder holds anything Lineupify did not create. Remove the app's access on Spotify's side at https://www.spotify.com/account/apps/.
 - Your MCP host can disable the server entirely (Claude Desktop: Settings → Developer; Claude Code: `claude mcp remove lineupify`).
 
 **Model-driven writes.** `create_playlist` refuses until the draft has been shown to you, unless the assistant passes `confirm: true`. Like any MCP server, Lineupify does what the assistant asks; the write tools carry MCP `destructiveHint` annotations so hosts that ask for permission can single them out. Review the draft before publishing, or run read-only.

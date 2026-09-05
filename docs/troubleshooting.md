@@ -28,6 +28,7 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 | `SPOTIFY_NOT_CONNECTED` | No tokens saved. | Call `connect`. |
 | `TOKEN_EXPIRED_RECONNECT` | The refresh token is older than 6 months, or Spotify refused it (`invalid_grant`). | Call `connect` with `force: true`, or run `lineupify-mcp auth --force`. |
 | `JOB_RUNNING` | You tried to `connect` (switch accounts), `disconnect` or `delete_draft` while a draft is building. | Wait for the build (`get_draft` with `waitSeconds: 25`) and retry. |
+| `PURGE_REFUSED` | `disconnect purge: true` / `logout --purge` found files in the data folder that Lineupify did not create (`LINEUPIFY_HOME` points at a shared folder). Nothing was deleted. | Delete `config.json`, `tokens.json`, `cache/`, `drafts/` and `exports/` by hand, or point `LINEUPIFY_HOME` at a folder of its own. |
 | `HOST_CONFIG_INVALID` | `lineupify-mcp install` found the host's config file (`claude_desktop_config.json` or `~/.cursor/mcp.json`) but could not parse it as JSON. Nothing was written. | Fix the file (a trailing comma is the usual cause) and run `install` again, or paste the snippet from `lineupify-mcp doctor` into it by hand. |
 | `READ_ONLY_MODE` | `LINEUPIFY_READ_ONLY` is set, so `create_playlist` and `update_playlist` are disabled. | Remove the variable from the host's MCP config and restart the host, or keep it and use `export_draft`. |
 
@@ -94,7 +95,7 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 | `DRAFT_PAUSED` | The build stopped on an error (quota, expired token, connection). | Fix the cause shown in the message, call `get_draft` to resume, or `create_playlist` with `allowPartial: true`. |
 | `UNRESOLVED_ARTISTS` | `stopIfUnresolved` is on and some artists were not found. | Fix them with `edit_draft` (`add_track`, `set_artist_source`, `exclude_artist`) or a new draft with corrected names; or pass `allowPartial: true`. |
 | `DRAFT_EMPTY` | The draft has no tracks. | Check `get_draft view=unresolved`; add a Last.fm key, fix names, or `add_track`. |
-| `CONFIRM_REQUIRED` | The draft has never been shown to the user. | Call `get_draft` (any non-summary view marks it as reviewed) or pass `confirm: true` if the user asked to publish blind. |
+| `CONFIRM_REQUIRED` | `create_playlist`: the draft has never been shown to the user. `disconnect`: `purge: true` was given without `confirm: true`. | Publishing: call `get_draft` (any non-summary view marks it as reviewed) or pass `confirm: true` if the user asked to publish blind. Purging: ask the user, then pass `confirm: true` with `purge: true`. |
 | `ALREADY_PUBLISHED` | This draft already has a playlist. | `update_playlist` to push changes, or `create_playlist` with `mode: "new"` for a second copy. |
 | `NO_PLAYLIST` | `update_playlist` on a draft that was never published. | Use `create_playlist`. |
 | `PLAYLIST_GONE` | The playlist was deleted in Spotify or is not editable by the connected account. | `create_playlist` with `mode: "new"`. |

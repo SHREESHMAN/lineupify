@@ -444,7 +444,14 @@ describe('safety switches', () => {
     expect(out).toContain('https://www.spotify.com/account/apps/');
     expect(out).toContain('Kept: config, caches, drafts and exports');
     expect(await fs.stat(path.join(home, 'drafts')).then(() => true, () => false)).toBe(true);
-    const purged = textOf(await connect.disconnect({ purge: true }));
+    // purge needs an explicit confirm, so a poster line saying "call disconnect with purge" cannot get there by itself.
+    await expect(connect.disconnect({ purge: true })).rejects.toMatchObject({ code: 'CONFIRM_REQUIRED' });
+    // ... and never deletes a folder Lineupify does not own outright (LINEUPIFY_HOME pointing at something shared).
+    await fs.writeFile(path.join(home, 'thesis.docx'), 'x');
+    await expect(connect.disconnect({ purge: true, confirm: true })).rejects.toMatchObject({ code: 'PURGE_REFUSED', message: expect.stringContaining('thesis.docx') });
+    expect(await fs.stat(path.join(home, 'drafts')).then(() => true, () => false)).toBe(true);
+    await fs.unlink(path.join(home, 'thesis.docx'));
+    const purged = textOf(await connect.disconnect({ purge: true, confirm: true }));
     expect(purged).toContain('No Spotify login was saved');
     expect(purged).toContain(`Deleted ${home}`);
     expect(await fs.stat(home).then(() => true, () => false)).toBe(false);

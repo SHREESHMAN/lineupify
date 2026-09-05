@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const home = await fs.mkdtemp(path.join(os.tmpdir(), 'lineupify-cli-'));
+const hostDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lineupify-host-'));
 process.env.LINEUPIFY_HOME = home;
 process.env.LINEUPIFY_LOG = 'error';
 process.env.LINEUPIFY_NO_UPDATE_CHECK = '1';
@@ -32,6 +33,7 @@ afterAll(async () => {
   vi.restoreAllMocks();
   setFetch((...args) => fetch(...args));
   await fs.rm(home, { recursive: true, force: true }).catch(() => undefined);
+  await fs.rm(hostDir, { recursive: true, force: true }).catch(() => undefined);
 });
 
 describe('cli', () => {
@@ -87,7 +89,7 @@ describe('cli', () => {
   });
 
   it('install keeps the other servers in a valid host config', async () => {
-    const file = path.join(home, 'host', 'claude_desktop_config.json');
+    const file = path.join(hostDir, 'claude_desktop_config.json');
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, JSON.stringify({ mcpServers: { filesystem: { command: 'npx', args: ['-y', 'fs'] } }, other: 1 }), 'utf8');
     await cli.mergeMcpJson(file);
@@ -98,7 +100,7 @@ describe('cli', () => {
   });
 
   it('install refuses to rewrite a host config that is not valid JSON', async () => {
-    const file = path.join(home, 'host', 'broken', 'claude_desktop_config.json');
+    const file = path.join(hostDir, 'broken', 'claude_desktop_config.json');
     await fs.mkdir(path.dirname(file), { recursive: true });
     const broken = '{ "mcpServers": { "filesystem": { "command": "npx" }, } }';
     await fs.writeFile(file, broken, 'utf8');

@@ -23,6 +23,13 @@ export const SPOTIFY_APPS_URL = 'https://www.spotify.com/account/apps/';
 export async function disconnectAccount(opts: { purge?: boolean }): Promise<string[]> {
   const drafts = await listDrafts();
   if (drafts.some((d) => isRunning(d.id))) throw new LineupifyError('JOB_RUNNING', 'A draft is building right now.', 'Wait for it to finish (get_draft with waitSeconds), then disconnect.');
+  if (opts.purge) {
+    // Refuse to rm -rf a folder Lineupify does not own outright (LINEUPIFY_HOME pointing somewhere shared).
+    const foreign = await foreignEntries(paths.home());
+    if (foreign.length) {
+      throw new LineupifyError('PURGE_REFUSED', `${paths.home()} contains ${foreign.length} entr${foreign.length === 1 ? 'y' : 'ies'} Lineupify did not create (${foreign.slice(0, 5).map((f) => clean(f, 40)).join(', ')}${foreign.length > 5 ? ', …' : ''}). Nothing was deleted.`, 'LINEUPIFY_HOME points at a folder shared with something else. Delete config.json, tokens.json, cache/, drafts/ and exports/ by hand, or give Lineupify its own folder.');
+    }
+  }
   spotify.cancelPendingAuth();
   const tokens = await spotify.loadTokens();
   await spotify.clearTokens();
@@ -37,6 +44,15 @@ export async function disconnectAccount(opts: { purge?: boolean }): Promise<stri
   }
   lines.push(`Lineupify cannot revoke the token on Spotify's side. To remove its access entirely, open ${SPOTIFY_APPS_URL} and click "Remove access" next to your app.`);
   return lines;
+}
+
+/** Everything Lineupify itself writes at the top of its data folder (plus writeJsonAtomic's temp files). */
+const KNOWN_ENTRY = /^(config\.json|tokens\.json|tokens\.lock|cache|drafts|exports)(\.\d+\.\d+\.tmp)?$/;
+
+/** Entries in the data folder that Lineupify did not create; purge refuses when there are any. */
+export async function foreignEntries(home: string): Promise<string[]> {
+  const entries = await fs.readdir(home).catch(() => [] as string[]);
+  return entries.filter((e) => !KNOWN_ENTRY.test(e)).sort();
 }
 
 const require = createRequire(import.meta.url);
@@ -208,7 +224,10 @@ export async function connect(args: { force?: boolean; clientId?: string }) {
   return text(lines.join('\n'));
 }
 
-export async function disconnect(args: { purge?: boolean }) {
+export async function disconnect(args: { purge?: boolean; confirm?: boolean }) {
+  if (args.purge && !args.confirm) {
+    throw new LineupifyError('CONFIRM_REQUIRED', 'purge: true deletes everything Lineupify keeps on disk: config (client ID, defaults, Last.fm key), caches, drafts and exports.', 'Ask the user first; if they agree, call disconnect again with purge: true and confirm: true.');
+  }
   const lines = await disconnectAccount({ purge: !!args.purge });
   lines.push(args.purge ? 'Next: setup with the client ID and connect to start again.' : 'Next: connect to sign in again.');
   return text(lines.join('\n'));
