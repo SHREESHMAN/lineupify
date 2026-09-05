@@ -31,7 +31,7 @@ One guided run in a terminal: it shows the Spotify app steps and opens the dashb
 
 ## Claude Desktop
 
-**One-click bundle.** Every GitHub release ships `lineupify-<version>.mcpb`. Download it, double-click it (or drag it onto Claude Desktop), paste your Client ID into the form it shows, done. The bundle contains the server and its dependencies; Node.js is still required. Then say "connect Lineupify to Spotify" in a chat.
+**One-click bundle.** Every GitHub release ships `lineupify-<version>.mcpb`. Download it, double-click it (or drag it onto Claude Desktop), paste your Client ID into the form it shows (or leave it empty for Deezer mode), done. The bundle contains the server and its dependencies; Node.js is still required. Then say "connect Lineupify to Spotify" in a chat.
 
 **Or the config file.** Config file:
 

@@ -7,6 +7,7 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 ### Fixed
 
 - Interrupted Deezer builds resume again. `get_draft` skipped the resume whenever no Spotify login was saved, before looking at the draft's provider, so a Deezer-mode draft interrupted by a host restart (or the 3 s shutdown abort) stayed `paused` forever.
+- The Claude Desktop bundle (`.mcpb`) no longer requires a Spotify Client ID in its install form, so Deezer-mode users can use the one-click path. The field says to leave it empty for Deezer mode.
 - `lineupify-mcp install` (and `init`) refused to touch a host config that is not valid JSON instead of silently replacing it with a Lineupify-only one. A trailing comma in `claude_desktop_config.json` used to make every other MCP server disappear (a `.bak` was kept, but nothing said so). New error `HOST_CONFIG_INVALID`; the CLI prints the snippet to paste by hand.
 
 ## 0.4.1 - 2026-09-04

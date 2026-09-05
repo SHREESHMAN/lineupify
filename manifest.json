@@ -38,8 +38,8 @@
     "spotify_client_id": {
       "type": "string",
       "title": "Spotify Client ID",
-      "description": "From developer.spotify.com/dashboard. Create an app with Redirect URI http://127.0.0.1:8765/callback (exactly, with the port) and paste its Client ID here. No secret needed.",
-      "required": true,
+      "description": "Leave empty for Deezer mode (no account, export instead of publish). For Spotify: from developer.spotify.com/dashboard, create an app with Redirect URI http://127.0.0.1:8765/callback (exactly, with the port) and paste its Client ID here. No secret needed.",
+      "required": false,
       "sensitive": false
     },
     "lastfm_api_key": {
