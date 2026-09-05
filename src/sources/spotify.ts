@@ -369,10 +369,19 @@ async function apiWithToken<T>(accessToken: string, path: string, opts: ApiOptio
     throw err;
   }
   if (res.status === 401 && !opts.retried) {
-    // Access token revoked or expired early: force a refresh once.
-    const t = await loadTokens();
-    if (t) {
-      await saveTokens({ ...t, expiresAt: 0 });
+    // Access token revoked or expired early: force a refresh once. Done under the
+    // token lock against a fresh read, so a refresh another process finished in
+    // the meantime is used rather than overwritten (that would resurrect a
+    // refresh token Spotify has already rotated away, and the next refresh
+    // would fail with invalid_grant).
+    const lock = await waitLock(paths.tokensLock(), 15_000);
+    try {
+      const t = await loadTokens();
+      if (t && t.accessToken === accessToken) await saveTokens({ ...t, expiresAt: 0 });
+    } finally {
+      await lock.release();
+    }
+    if (await loadTokens()) {
       const fresh = await getAccessToken();
       return apiWithToken<T>(fresh.accessToken, path, { ...opts, retried: true });
     }
