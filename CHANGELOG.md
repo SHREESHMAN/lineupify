@@ -12,6 +12,7 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 ### Fixed
 
+- `clean()` no longer strips U+200C (ZWNJ) and U+200D (ZWJ), so Persian, Urdu and Indic names and emoji sequences are shown intact, and artist names reach the Deezer search unbroken (they were being split into separate words, which made some artists resolve wrongly or not at all). Zero-width spaces, bidi marks and overrides are now removed outright instead of being replaced by a space.
 - Interrupted Deezer builds resume again. `get_draft` skipped the resume whenever no Spotify login was saved, before looking at the draft's provider, so a Deezer-mode draft interrupted by a host restart (or the 3 s shutdown abort) stayed `paused` forever.
 - The Claude Desktop bundle (`.mcpb`) no longer requires a Spotify Client ID in its install form, so Deezer-mode users can use the one-click path. The field says to leave it empty for Deezer mode.
 - The one-time retry after a Spotify 401 wrote `tokens.json` outside the token lock from a copy read before it. With two hosts refreshing at once it could overwrite the rotated refresh token with the old one; the next refresh then failed with `invalid_grant` and the user was told to log in again for no visible reason. The retry now takes the lock, re-reads, and only invalidates the access token that actually got the 401.

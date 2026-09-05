@@ -4,12 +4,18 @@
  * it inside fixed table layouts so it can never read as an instruction.
  */
 
+// Control characters and line/paragraph separators: become a space so words stay apart.
 // eslint-disable-next-line no-control-regex
-const CONTROL = new RegExp('[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028\u2029\ufeff]', 'g');
+const CONTROL = new RegExp('[\u0000-\u001f\u007f-\u009f\u2028\u2029]', 'g');
+// Invisible formatting: zero-width space, bidi marks, bidi overrides/isolates, BOM. Removed
+// outright. U+200C ZWNJ and U+200D ZWJ are deliberately kept: Persian, Urdu and Indic
+// scripts and emoji sequences need them, and search queries pass through here too.
+const INVISIBLE = new RegExp('[\u200b\u200e\u200f\u202a-\u202e\u2066-\u2069\ufeff]', 'g');
 
 export function clean(s: unknown, max = 80): string {
   const str = String(s ?? '')
     .replace(CONTROL, ' ')
+    .replace(INVISIBLE, '')
     .replace(/\s+/g, ' ')
     .trim();
   return str.length > max ? str.slice(0, max - 1) + '…' : str;
