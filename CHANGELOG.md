@@ -13,6 +13,8 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 ### Fixed
 
+- `docs/setup-spotify.md` lists all eight scopes the consent screen shows (it named four).
+- README and SECURITY.md no longer claim external text "cannot pose as an instruction"; they say what the cleaning does and point at the switches that actually limit what a misled assistant can do.
 - `clean()` no longer strips U+200C (ZWNJ) and U+200D (ZWJ), so Persian, Urdu and Indic names and emoji sequences are shown intact, and artist names reach the Deezer search unbroken (they were being split into separate words, which made some artists resolve wrongly or not at all). Zero-width spaces, bidi marks and overrides are now removed outright instead of being replaced by a space.
 - Interrupted Deezer builds resume again. `get_draft` skipped the resume whenever no Spotify login was saved, before looking at the draft's provider, so a Deezer-mode draft interrupted by a host restart (or the 3 s shutdown abort) stayed `paused` forever.
 - The Claude Desktop bundle (`.mcpb`) no longer requires a Spotify Client ID in its install form, so Deezer-mode users can use the one-click path. The field says to leave it empty for Deezer mode.
@@ -98,10 +100,9 @@ Playlists for everyone, not only festival-goers: build from a description, a gen
 
 Initial release.
 
-- `stopIfUnresolved` option and a not-found report at the end of every summary and publish.
-
 ### Added
 
+- `stopIfUnresolved` option and a not-found report at the end of every summary and publish.
 - MCP server over stdio with 14 tools: `status`, `setup`, `connect`, `parse_lineup`, `create_draft`, `get_draft`, `edit_draft`, `search_tracks`, `create_playlist`, `update_playlist`, `compare_taste`, `export_draft`, `list_drafts`, `delete_draft`.
 - Bring-your-own Spotify app: PKCE login over a fixed port 8765 (`http://127.0.0.1:8765/callback`, no client secret), optional fixed port via `SPOTIFY_REDIRECT_PORT`, tokens stored with mode 0600, safe token refresh across several processes, 6-month refresh-token expiry tracking with a 30-day warning in `status`.
 - Lineup parsing: poster text to artists with headliner / sub / undercard tiers, days and stages; headers, dates and ticket lines are dropped. Structured artists can be passed straight to `create_draft`.

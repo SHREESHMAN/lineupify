@@ -5,13 +5,13 @@ Thanks for helping. This page is short on purpose; the README explains what the 
 ## Setup
 
 ```
-git clone https://github.com/shreeshman/lineupify
+git clone https://github.com/SHREESHMAN/lineupify
 cd lineupify
 npm install
 npm run typecheck && npm run lint && npm test
 ```
 
-Node.js 20 or newer. The unit tests run offline: Spotify and Deezer are mocked at the module boundary (see `test/unit/jobs-flow.test.ts` for the pattern). Nothing in `npm test` needs a Spotify account.
+Node.js 20 or newer runs the server; the test suite needs 20.11 or newer (`import.meta.dirname`). The unit tests run offline: Spotify and Deezer are mocked at the module boundary (see `test/unit/jobs-flow.test.ts` for the pattern). Nothing in `npm test` needs a Spotify account.
 
 ## Running against the real APIs
 

@@ -28,7 +28,7 @@ The eight OAuth scopes and the tool that needs each one are listed in the README
 
 - OAuth uses PKCE over a loopback redirect. There is no client secret, so nothing secret exists besides your own tokens.
 - Tokens are written to `~/.lineupify/tokens.json`. On macOS and Linux the file is mode 0600. On Windows the mode call is a no-op and the file is protected by your user profile's default permissions, like other CLIs' credential files.
-- Tool output only ever contains cleaned strings: control characters are stripped, lengths are capped, and external text (poster text, track titles, playlist descriptions, Deezer playlist names) is placed inside fixed table layouts so it cannot pose as an instruction.
+- Tool output only ever contains cleaned strings: control characters are stripped, lengths are capped, and external text (poster text, track titles, playlist descriptions, Deezer playlist names) is placed inside fixed table layouts. That reduces the chance that external text is read as an instruction; it does not rule it out, so the controls that matter are the ones below: private by default, the review gate on `create_playlist`, `confirm` on `disconnect purge`, `LINEUPIFY_READ_ONLY`, and the fact that Spotify's API has no playlist delete endpoint.
 - Logs go to stderr only, with tokens, authorization codes and API keys redacted.
 - Write tools carry MCP annotations (`destructiveHint`, `readOnlyHint`) so hosts that prompt for permission can distinguish them.
 - `create_playlist` refuses until the draft has been shown (or the model passes `confirm: true`). This is a convention, not a guarantee: any MCP server is driven by the model, so review what it proposes before publishing, or run read-only.

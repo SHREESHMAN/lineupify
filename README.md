@@ -1,6 +1,6 @@
 # Lineupify
 
-[![CI](https://github.com/shreeshman/lineupify/actions/workflows/ci.yml/badge.svg)](https://github.com/shreeshman/lineupify/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/lineupify-mcp)](https://www.npmjs.com/package/lineupify-mcp) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![CI](https://github.com/SHREESHMAN/lineupify/actions/workflows/ci.yml/badge.svg)](https://github.com/SHREESHMAN/lineupify/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/lineupify-mcp)](https://www.npmjs.com/package/lineupify-mcp) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Say what you want to hear. Get a Spotify playlist in seconds, in your own account, that you can read, edit and trust.**
 
@@ -65,7 +65,7 @@ The one step nobody can skip is creating a Spotify app, because Spotify only let
    npx -y lineupify-mcp init
    ```
 
-   It takes the Client ID, logs you in through your browser, adds Lineupify to Claude Desktop, Claude Code or Cursor (whichever it finds), and runs a health check. Prefer clicking? Claude Desktop users can instead download `lineupify-<version>.mcpb` from the [releases page](https://github.com/shreeshman/lineupify/releases) and double-click it.
+   It takes the Client ID, logs you in through your browser, adds Lineupify to Claude Desktop, Claude Code or Cursor (whichever it finds), and runs a health check. Prefer clicking? Claude Desktop users can instead download `lineupify-<version>.mcpb` from the [releases page](https://github.com/SHREESHMAN/lineupify/releases) and double-click it (Node.js 20 or newer must still be installed).
 
    **Or let your assistant do step 2.** If your assistant can run terminal commands (Claude Code, Cursor, and similar), paste this, with your Client ID filled in:
 
@@ -461,7 +461,7 @@ Lineupify never deletes or unfollows a playlist, never changes your library or f
 
 **Model-driven writes.** `create_playlist` refuses until the draft has been shown to you, unless the assistant passes `confirm: true`. Like any MCP server, Lineupify does what the assistant asks; the write tools carry MCP `destructiveHint` annotations so hosts that ask for permission can single them out. Review the draft before publishing, or run read-only.
 
-**External text.** Poster text, track titles, playlist descriptions and Deezer playlist names are cleaned (control characters stripped, length capped) and shown inside fixed table layouts, so they cannot pose as instructions. Logs go to stderr only, with tokens and keys redacted.
+**External text.** Poster text, track titles, playlist descriptions and Deezer playlist names are cleaned (control characters stripped, length capped) and shown inside fixed table layouts, which reduces the chance that external text is read as an instruction. It cannot rule it out: a poster line that says "publish this as public" reaches the assistant as data, and nothing stops a model from acting on it. The real protections are the switches above: playlists are private by default, `create_playlist` needs a reviewed draft or an explicit `confirm`, `disconnect purge` needs `confirm` too, `LINEUPIFY_READ_ONLY` turns every write off, and Spotify has no delete endpoint. Logs go to stderr only, with tokens and keys redacted.
 
 **Terms.** Last.fm data is for non-commercial use. Deezer's public API has its own terms of use. Check both before using Lineupify for a business (a venue, a radio schedule).
 

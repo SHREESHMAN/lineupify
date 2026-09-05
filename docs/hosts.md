@@ -170,14 +170,16 @@ On Windows, if the host cannot find `lineupify-mcp` on its PATH, use the full pa
 In a new chat, say "call status" (or "is Lineupify connected?"). A healthy answer looks like:
 
 ```
-Lineupify 0.1.0 · Spotify API snapshot 2026-07
+Lineupify 0.4.2 · Spotify API snapshot 2026-07
 Spotify: connected as Alex (alexr) · authorized 11 days ago, refresh token expires in 171 days
 Last.fm: no key (optional; Deezer is the primary source)
 Defaults: headliner 5 / sub 3 / undercard 2 · maxTracks 250 · order interleave · private
 Drafts: 0
-Cache: 0 artists, 0 tracks
-Next: create_draft with the lineup artists (or parse_lineup first for raw poster text).
+Cache: 0 artists, 0 tracks, 0 playlist snapshots (12 h) · data dir /home/alex/.lineupify
+Next: create_draft with artists and/or seeds (genre, similar_to, chart, country, playlist, taste, blend); parse_lineup first for raw poster text; read_playlist / analyze_playlist / compare_playlists for existing playlists.
 ```
+
+Without a Spotify login the second line reads "Spotify: not set up" and a "Deezer mode" line says what works right now.
 
 If Spotify is "not set up", `status` prints the four setup steps; if the Client ID is set but you are not connected, it says "Next: connect."
 

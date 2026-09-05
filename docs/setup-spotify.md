@@ -64,7 +64,7 @@ Ask the assistant to call `connect`, or run `npx -y lineupify-mcp auth`. A brows
 
 The login page stays valid for 5 minutes. If the browser did not open, `connect` and `status` both print the URL to open by hand.
 
-Scopes requested: `playlist-modify-private`, `playlist-modify-public`, `user-top-read`, `user-follow-read`.
+Scopes requested (what the consent screen lists): `playlist-modify-private`, `playlist-modify-public` (create and update playlists), `playlist-read-private`, `playlist-read-collaborative` (read your own playlists), `user-top-read`, `user-follow-read` (top and followed artists for `taste` and `compare_taste`), `user-read-private` (your country, so search returns tracks playable for you), `user-library-read` (liked songs for `library` and `taste`).
 
 ## Reusing an existing app
 

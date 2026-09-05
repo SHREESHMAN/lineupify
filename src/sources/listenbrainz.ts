@@ -12,7 +12,7 @@ import { normalizeIsrc } from '../engine/normalize.js';
 
 const MB = 'https://musicbrainz.org/ws/2';
 const LB = 'https://labs.api.listenbrainz.org';
-const USER_AGENT = 'lineupify-mcp (https://github.com/shreeshman/lineupify)';
+const USER_AGENT = 'lineupify-mcp (https://github.com/SHREESHMAN/lineupify)';
 export const LB_ALGORITHM = 'session_based_days_7500_session_300_contribution_5_threshold_15_limit_50_skip_30';
 /** The algorithm bakes in limit_50: at most 50 similar recordings per seed. */
 export const LB_MAX_PER_SEED = 50;
