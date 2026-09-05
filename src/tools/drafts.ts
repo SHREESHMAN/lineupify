@@ -320,23 +320,34 @@ export async function exportDraft(args: { draftId: string; format?: 'markdown' |
   const fmt = args.format ?? 'markdown';
   const artistName = new Map(d.artists.map((a) => [a.key, a.name]));
   const provider = d.provider ?? 'spotify';
+  // Every string here came from a provider or a poster: clean it (no line breaks, so one
+  // track stays one line in every format) and cap it, exactly as the tool output does.
+  const artist = (t: DraftTrack) => clean(artistName.get(t.artistKey) ?? t.artists[0], 200);
+  const title = (t: DraftTrack) => clean(t.name, 200);
+  const album = (t: DraftTrack) => clean(t.album ?? '', 200);
+  const link = (t: DraftTrack) => clean(trackLink(t), 200);
   let body: string;
   if (fmt === 'csv') {
-    const esc = (s: unknown) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+    // Strings that start like a formula (=, +, -, @, tab, CR) get a leading apostrophe so
+    // Excel and LibreOffice show them as text instead of evaluating them.
+    const cell = (s: unknown) => {
+      const v = typeof s === 'string' ? clean(s, 200) : String(s ?? '');
+      return `"${(/^[=+\-@\t\r]/.test(v) ? `'${v}` : v).replace(/"/g, '""')}"`;
+    };
     body = [
       'position,artist,title,all_artists,album,year,duration_seconds,explicit,bpm,isrc,provider,spotify_uri,url',
-      ...d.tracks.map((t, i) => [i + 1, artistName.get(t.artistKey) ?? t.artists[0], t.name, t.artists.join('; '), t.album ?? '', t.year ?? '', Math.round(t.durationMs / 1000), t.explicit, t.bpm ? Math.round(t.bpm) : '', t.isrc ?? '', provider, provider === 'spotify' ? t.uri : '', trackLink(t)].map(esc).join(',')),
+      ...d.tracks.map((t, i) => [i + 1, artist(t), title(t), t.artists.map((a) => clean(a, 200)).join('; '), album(t), t.year ?? '', Math.round(t.durationMs / 1000), t.explicit, t.bpm ? Math.round(t.bpm) : '', t.isrc ?? '', provider, provider === 'spotify' ? t.uri : '', link(t)].map(cell).join(',')),
     ].join('\n');
   } else if (fmt === 'm3u') {
-    body = ['#EXTM3U', ...d.tracks.flatMap((t) => [`#EXTINF:${Math.round(t.durationMs / 1000)},${artistName.get(t.artistKey) ?? t.artists[0]} - ${t.name}`, trackLink(t)])].join('\n');
+    body = ['#EXTM3U', ...d.tracks.flatMap((t) => [`#EXTINF:${Math.round(t.durationMs / 1000)},${artist(t)} - ${title(t)}`, link(t)])].join('\n');
   } else if (fmt === 'links') {
     // One link per line: what playlist transfer tools (TuneMyMusic, Soundiiz) accept as a paste.
-    body = d.tracks.map(trackLink).join('\n');
+    body = d.tracks.map(link).join('\n');
   } else if (fmt === 'text') {
     // "Artist - Title" per line: the other paste format transfer tools accept, and readable by anyone.
-    body = d.tracks.map((t) => `${artistName.get(t.artistKey) ?? t.artists[0]} - ${t.name}`).join('\n');
+    body = d.tracks.map((t) => `${artist(t)} - ${title(t)}`).join('\n');
   } else {
-    body = [`# ${d.name}`, '', `${d.tracks.length} tracks · ${fmtDuration(totalDurationMs(d))}`, '', ...d.tracks.map((t, i) => `${i + 1}. **${artistName.get(t.artistKey) ?? t.artists[0]}** – ${t.name}${t.album ? ` _(${t.album})_` : ''} · ${fmtDuration(t.durationMs)}`)].join('\n');
+    body = [`# ${clean(d.name, 200)}`, '', `${d.tracks.length} tracks · ${fmtDuration(totalDurationMs(d))}`, '', ...d.tracks.map((t, i) => `${i + 1}. **${artist(t)}** – ${title(t)}${t.album ? ` _(${album(t)})_` : ''} · ${fmtDuration(t.durationMs)}`)].join('\n');
   }
   if (!args.save) return text(body.length > 60_000 ? body.slice(0, 60_000) + '\n… truncated; use save: true for the full file' : body);
   const ext = fmt === 'markdown' ? 'md' : fmt === 'links' || fmt === 'text' ? 'txt' : fmt;

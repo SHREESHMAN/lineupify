@@ -492,6 +492,28 @@ describe('deezer provider (no Spotify account)', () => {
     expect(txt).toContain('Fred again.. - Marea');
   });
 
+  it('exports clean every field and neutralise spreadsheet formulas', async () => {
+    const d = await built(await drafts.createDraft({ provider: 'deezer', artists: ['Skrillex'], tracksPerArtist: 1 }));
+    // Titles and album names come from the provider; a hostile one can start with a formula trigger or carry a line break.
+    const t = d.tracks[0]!;
+    t.name = '=HYPERLINK("http://evil.example")\nsecond line';
+    t.album = '@SUM(1)';
+    t.artists = ['-Skrillex\u0000'];
+    await saveDraft(d);
+    const csv = textOf(await drafts.exportDraft({ draftId: d.id, format: 'csv' }));
+    expect(csv.split('\n').length).toBe(2);
+    expect(csv).toContain(`"'=HYPERLINK(""http://evil.example"") second line"`);
+    expect(csv).toContain(`"'@SUM(1)"`);
+    expect(csv).toContain(`"'-Skrillex"`);
+    for (const format of ['m3u', 'text', 'markdown'] as const) {
+      const lines = textOf(await drafts.exportDraft({ draftId: d.id, format })).split('\n');
+      // The line break inside the title must not split the track over two lines.
+      expect(lines.filter((l) => l.includes('second line')).length).toBe(1);
+      expect(lines.find((l) => l.includes('second line'))).toContain('=HYPERLINK("http://evil.example") second line');
+      expect(lines.join('\n')).not.toContain('\u0000');
+    }
+  });
+
   it('an interrupted Deezer build resumes from get_draft without a Spotify login', async () => {
     const d = await built(await drafts.createDraft({ provider: 'deezer', artists: ['Overmono'], tracksPerArtist: 1 }));
     expect(d.tracks.map((t) => t.name)).toEqual(['So U Kno']);
