@@ -35,7 +35,8 @@ If the workflow fails:
 - **E422 provenance / private repository**: the repo is private; the workflow already publishes without provenance in that case. If it still fails, check `github.event.repository.private` handling in the publish step.
 - **Tag already exists** on the release step: the check uses `git ls-remote`; a manual run on an old checkout can still race. Re-run the workflow; it uploads with `--clobber`.
 - **npm 4xx on publish**: the trusted publisher on npmjs.com must name `SHREESHMAN` / `lineupify` / `release.yml` with direct publish allowed, and the runner needs npm ≥ 11.5.1 (the workflow upgrades npm).
-- Re-run by hand from the Actions tab or `gh workflow run release.yml --ref main`; it skips npm when the version already exists and refreshes the release asset.
+- Re-run by hand from the Actions tab or `gh workflow run release.yml --ref main`; it skips npm when the version already exists and refreshes the release asset. The job runs only from `main` or a `v*` tag.
+- The workflow pins the actions by commit SHA and npm by exact version; Dependabot bumps the actions, the npm pin is bumped by hand when a newer 11.x is needed.
 
 ## After
 

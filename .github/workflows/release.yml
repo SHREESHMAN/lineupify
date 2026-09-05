@@ -2,13 +2,18 @@
 # Trigger: push a tag that matches package.json, e.g.
 #   npm version minor            # bumps package.json (+ manifest/server.json via the version script) and tags
 #   git push --follow-tags
-# or run it by hand from the Actions tab (workflow_dispatch) for the current version.
+# or run it by hand from the Actions tab (workflow_dispatch) for the current version;
+# a manual run is only accepted from main.
 #
 # npm publishing uses npm Trusted Publishing (OIDC): the package's settings on
 # npmjs.com name this repository and this workflow file as a trusted publisher,
 # so no token is stored anywhere. id-token: write below is what makes that work.
 # If the version is already on npm (for example published from a laptop), the
 # publish step is skipped and the GitHub release is still created.
+#
+# This job holds an OIDC token that can publish the package, so its inputs are
+# pinned: actions by commit SHA (Dependabot bumps them, keep the version
+# comment in sync) and npm by exact version.
 name: Release
 
 on:
@@ -22,16 +27,19 @@ permissions:
 
 jobs:
   release:
+    # Only a version tag or main may publish; a manual run from any other ref is refused.
+    if: github.ref_type == 'tag' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
       # Trusted publishing needs npm 11.5.1 or newer; the runner's Node 22 ships an older npm.
-      - run: npm install -g npm@latest && npm --version
+      # Pinned to an exact version so a compromised npm release cannot run here unreviewed.
+      - run: npm install -g npm@11.19.1 && npm --version
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint

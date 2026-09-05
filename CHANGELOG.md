@@ -4,6 +4,10 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 ## Unreleased
 
+### Security
+
+- Release workflow: `actions/checkout` and `actions/setup-node` are pinned to commit SHAs (Dependabot keeps them current), npm is installed at an exact version instead of `latest`, and a manual run is accepted only from `main` or a version tag. The job holds the npm publishing token, so its inputs are no longer mutable.
+
 ### Fixed
 
 - Interrupted Deezer builds resume again. `get_draft` skipped the resume whenever no Spotify login was saved, before looking at the draft's provider, so a Deezer-mode draft interrupted by a host restart (or the 3 s shutdown abort) stayed `paused` forever.
