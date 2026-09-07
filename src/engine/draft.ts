@@ -78,8 +78,13 @@ export function newDraft(params: { name: string; artists: LineupArtist[]; option
   };
 }
 
-/** True while the build has anything left to do: seeds to expand, exclusions to read, artists to fetch. */
+/**
+ * True while the build has anything left to do: seeds to expand, exclusions to
+ * read, artists to fetch. A paused draft always counts: the pause may have hit
+ * during finalize with every artist done, and resuming is what finishes it.
+ */
 export function hasPendingWork(d: Draft): boolean {
+  if (d.status === 'paused') return true;
   if (d.artists.some((a) => a.status === 'pending')) return true;
   if (d.seeds?.some((s) => s.status === 'pending')) return true;
   if (d.excludeTracks && !d.excludeTracks.resolved) return true;

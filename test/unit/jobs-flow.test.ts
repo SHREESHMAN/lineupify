@@ -524,6 +524,17 @@ describe('deezer provider (no Spotify account)', () => {
     expect((await loadDraft(d.id))!.tracks.map((t) => t.name)).toEqual(['So U Kno']);
   });
 
+  it('a draft paused with nothing left to fetch is finished by get_draft instead of staying paused', async () => {
+    const d = await built(await drafts.createDraft({ provider: 'deezer', artists: ['Wet Leg'], tracksPerArtist: 1 }));
+    // The pause landed during finalize: every artist is resolved and the tracks are already there.
+    await saveDraft({ ...d, status: 'paused', error: 'NETWORK_ERROR: timeout. Check the connection, then call get_draft to resume.' });
+    const resumed = textOf(await drafts.getDraftTool({ draftId: d.id, waitSeconds: 10 }));
+    expect(resumed).toContain('status ready');
+    const after = (await loadDraft(d.id))!;
+    expect(after.error).toBeUndefined();
+    expect(after.tracks.map((t) => t.name)).toEqual(d.tracks.map((t) => t.name));
+  });
+
   it('refuses Spotify-only seeds, exclusions and discoveryOnly up front', async () => {
     await expect(drafts.createDraft({ provider: 'deezer', seeds: [{ type: 'taste' }] })).rejects.toMatchObject({ code: 'PROVIDER_NEEDS_SPOTIFY' });
     await expect(drafts.createDraft({ provider: 'deezer', artists: ['Wet Leg'], excludeTracksFrom: ['library'] })).rejects.toMatchObject({ code: 'PROVIDER_NEEDS_SPOTIFY' });
