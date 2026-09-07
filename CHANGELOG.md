@@ -13,6 +13,7 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 ### Fixed
 
+- `status` and `disconnect` print `~/.lineupify` for the default data folder instead of the absolute path (which carries the OS user name), and `status` repeats the Spotify user id only when it differs from the display name.
 - `search_tracks` is titled "Search tracks" (it was "Search Spotify tracks", which is what Claude Desktop shows in the permission prompt, even for a Deezer draft).
 - The npm package no longer ships `.map` files: their `sources` pointed at `../src`, which is not published, and they roughly doubled the tarball.
 - `docs/setup-spotify.md` lists all eight scopes the consent screen shows (it named four).

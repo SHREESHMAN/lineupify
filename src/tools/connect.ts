@@ -15,6 +15,17 @@ import { readOnlyMode, text } from './shared.js';
 
 export const SPOTIFY_APPS_URL = 'https://www.spotify.com/account/apps/';
 
+/** The data folder as shown to the model: the default is named, not spelled out (it contains the OS user name). */
+export function dataDirLabel(): string {
+  return process.env.LINEUPIFY_HOME ? paths.home() : '~/.lineupify';
+}
+
+/** "Name (id)" for a Spotify login, or just the name when the id would repeat it. */
+export function accountLabel(t: { displayName: string; userId: string }): string {
+  const name = clean(t.displayName || t.userId, 40);
+  return t.displayName && t.displayName !== t.userId ? `${name} (${clean(t.userId, 40)})` : name;
+}
+
 /**
  * Forget the Spotify login (and, with purge, every file Lineupify keeps).
  * Spotify has no API to revoke a token; the user removes the app at
@@ -38,9 +49,9 @@ export async function disconnectAccount(opts: { purge?: boolean }): Promise<stri
   if (opts.purge) {
     const home = paths.home();
     await fs.rm(home, { recursive: true, force: true });
-    lines.push(`Deleted ${home}: config (client ID, defaults, Last.fm key), caches, drafts and exports.`);
+    lines.push(`Deleted ${dataDirLabel()}: config (client ID, defaults, Last.fm key), caches, drafts and exports.`);
   } else {
-    lines.push(`Kept: config, caches, drafts and exports under ${paths.home()} (purge: true removes them too).`);
+    lines.push(`Kept: config, caches, drafts and exports under ${dataDirLabel()} (purge: true removes them too).`);
   }
   lines.push(`Lineupify cannot revoke the token on Spotify's side. To remove its access entirely, open ${SPOTIFY_APPS_URL} and click "Remove access" next to your app.`);
   return lines;
@@ -99,7 +110,7 @@ export async function statusText(): Promise<string> {
     let tokenNote = `authorized ${age.daysUsed} days ago, refresh token expires in ${age.daysLeft} days`;
     if (age.daysLeft <= 0) tokenNote = 'refresh token EXPIRED (Spotify limits them to 6 months). Call connect with force: true.';
     else if (age.daysLeft <= 30) tokenNote += ' — reconnect soon with connect force: true';
-    lines.push(`Spotify: connected as ${clean(tokens.displayName || tokens.userId, 40)} (${tokens.userId}) · ${tokenNote}`);
+    lines.push(`Spotify: connected as ${accountLabel(tokens)} · ${tokenNote}`);
     const granted = new Set((tokens.scope || '').split(/\s+/));
     const missing = spotify.SCOPES.filter((sc) => !granted.has(sc));
     if (tokens.scope && missing.length) lines.push(`Permissions missing (${missing.join(', ')}): call connect with force: true to re-login.`);
@@ -122,7 +133,7 @@ export async function statusText(): Promise<string> {
   const drafts = await listDrafts();
   const building = drafts.filter((x) => x.status === 'building' || isRunning(x.id));
   lines.push(`Drafts: ${drafts.length}${building.length ? ` (building: ${building.map((x) => `${x.id} ${x.progress.done}/${x.progress.total}`).join(', ')})` : ''}${drafts.length ? ` · latest ${drafts[0]!.id} "${clean(drafts[0]!.name, 40)}" ${drafts[0]!.status}` : ''}`);
-  lines.push(`Cache: ${await artistCache.size()} artists, ${await spotifyTrackCache.size()} tracks, ${await playlistCache.size()} playlist snapshots (12 h) · data dir ${paths.home()}`);
+  lines.push(`Cache: ${await artistCache.size()} artists, ${await spotifyTrackCache.size()} tracks, ${await playlistCache.size()} playlist snapshots (12 h) · data dir ${dataDirLabel()}`);
   const modes = [readOnlyMode() ? 'read-only (LINEUPIFY_READ_ONLY): create_playlist and update_playlist are disabled' : '', updateCheckDisabled() ? 'update check off (LINEUPIFY_NO_UPDATE_CHECK)' : ''].filter(Boolean);
   if (modes.length) lines.push(`Mode: ${modes.join(' · ')}`);
 

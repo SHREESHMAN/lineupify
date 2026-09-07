@@ -76,6 +76,20 @@ describe('connect', () => {
     expect(textOf(await connect.connect({ force: true }))).toContain('accounts.spotify.com');
   });
 
+  it('status names the default data dir and repeats the user id only when it adds something', () => {
+    const saved = process.env.LINEUPIFY_HOME;
+    try {
+      delete process.env.LINEUPIFY_HOME;
+      expect(connect.dataDirLabel()).toBe('~/.lineupify');
+    } finally {
+      process.env.LINEUPIFY_HOME = saved;
+    }
+    expect(connect.dataDirLabel()).toBe(home);
+    expect(connect.accountLabel({ displayName: 'Alex', userId: 'alexr' })).toBe('Alex (alexr)');
+    expect(connect.accountLabel({ displayName: 'alexr', userId: 'alexr' })).toBe('alexr');
+    expect(connect.accountLabel({ displayName: '', userId: '31k2x' })).toBe('31k2x');
+  });
+
   it('setup validates the id too', async () => {
     await expect(connect.setup({ clientId: 'zz' })).rejects.toMatchObject({ code: 'BAD_CLIENT_ID' });
     expect(textOf(await connect.setup({ clientId: ID }))).toContain('client ID saved');
