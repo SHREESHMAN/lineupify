@@ -169,6 +169,8 @@ export function isTransient(err: unknown): boolean {
   if (err instanceof HttpError) return err.status === 429 || err.status >= 500;
   if (!(err instanceof Error)) return false;
   if (err.name === 'TimeoutError') return true;
+  // Deezer's quota answer (code 4) after six backoffs: the service is there, it just wants us to wait.
+  if (err.name === 'DeezerQuotaError') return true;
   if (err instanceof TypeError && /fetch failed/i.test(err.message)) return true;
   const code = (err as NodeJS.ErrnoException).code ?? (err.cause as NodeJS.ErrnoException | undefined)?.code;
   return typeof code === 'string' && NET_CODES.has(code);

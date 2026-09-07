@@ -9,6 +9,7 @@ describe('isTransient', () => {
     expect(isTransient(Object.assign(new Error('timeout after 15000ms for https://api.deezer.com/x'), { name: 'TimeoutError' }))).toBe(true);
     expect(isTransient(Object.assign(new Error('getaddrinfo ENOTFOUND api.deezer.com'), { code: 'ENOTFOUND' }))).toBe(true);
     expect(isTransient(new Error('fetch failed', { cause: Object.assign(new Error('reset'), { code: 'ECONNRESET' }) }))).toBe(true);
+    expect(isTransient(Object.assign(new Error('Deezer quota exceeded'), { name: 'DeezerQuotaError' }))).toBe(true);
   });
 
   it('treats 429 and 5xx that outlived the retries as transient, other HTTP errors as permanent', () => {
