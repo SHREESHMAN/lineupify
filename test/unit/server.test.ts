@@ -101,7 +101,10 @@ describe('MCP server over stdio', () => {
       expect(t.description.length, t.name).toBeGreaterThan(40);
       expect(t.inputSchema.type).toBe('object');
     }
-    const surface = Object.fromEntries(tools.map((t) => [t.name, { inputs: Object.keys(t.inputSchema.properties ?? {}).sort(), readOnly: !!t.annotations?.readOnlyHint, destructive: !!t.annotations?.destructiveHint }]));
+    // The whole input schema (names, types, enums, bounds, descriptions) plus the
+    // annotations: a changed enum value or a dropped bound is a breaking change for
+    // users' saved prompts, so it must show up in the snapshot diff.
+    const surface = Object.fromEntries(tools.map((t) => [t.name, { title: (t as { title?: string }).title, inputSchema: t.inputSchema, annotations: t.annotations ?? {} }]));
     expect(surface).toMatchSnapshot();
   });
 

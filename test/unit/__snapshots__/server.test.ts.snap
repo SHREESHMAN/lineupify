@@ -3,244 +3,1406 @@
 exports[`MCP server over stdio > lists every tool with a stable input surface 1`] = `
 {
   "analyze_playlist": {
-    "destructive": false,
-    "inputs": [
-      "genres",
-      "playlist",
-      "refresh",
-      "tempo",
-    ],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": true,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "genres": {
+          "description": "default true",
+          "type": "boolean",
+        },
+        "playlist": {
+          "description": "open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs",
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string",
+        },
+        "refresh": {
+          "type": "boolean",
+        },
+        "tempo": {
+          "description": "default true",
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "playlist",
+      ],
+      "type": "object",
+    },
+    "title": "Analyze a playlist",
   },
   "compare_playlists": {
-    "destructive": false,
-    "inputs": [
-      "sources",
-    ],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": true,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "sources": {
+          "items": {
+            "description": "open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "maxItems": 4,
+          "minItems": 2,
+          "type": "array",
+        },
+      },
+      "required": [
+        "sources",
+      ],
+      "type": "object",
+    },
+    "title": "Compare playlists or people",
   },
   "compare_taste": {
-    "destructive": false,
-    "inputs": [
-      "draftId",
-      "reorderKnownFirst",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "draftId": {
+          "type": "string",
+        },
+        "reorderKnownFirst": {
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "draftId",
+      ],
+      "type": "object",
+    },
+    "title": "Compare lineup to listening history",
   },
   "connect": {
-    "destructive": false,
-    "inputs": [
-      "clientId",
-      "force",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "clientId": {
+          "description": "32-hex Client ID from developer.spotify.com/dashboard; saved before the login starts",
+          "type": "string",
+        },
+        "force": {
+          "type": "boolean",
+        },
+      },
+      "type": "object",
+    },
+    "title": "Connect Spotify",
   },
   "create_draft": {
-    "destructive": false,
-    "inputs": [
-      "allowVersions",
-      "artists",
-      "bpmRange",
-      "days",
-      "description",
-      "discoveryOnly",
-      "excludeArtists",
-      "excludeExplicit",
-      "excludeSeedArtists",
-      "excludeSeedSongs",
-      "excludeTracksFrom",
-      "lineup",
-      "maxDurationMin",
-      "maxTracks",
-      "name",
-      "order",
-      "provider",
-      "public",
-      "seeds",
-      "skipCovers",
-      "sources",
-      "stopIfUnresolved",
-      "strictBpm",
-      "strictYear",
-      "tracksPerArtist",
-      "tracksPerTier",
-      "yearRange",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "allowVersions": {
+          "description": "Allow live/remix/edit versions",
+          "type": "boolean",
+        },
+        "artists": {
+          "description": "Required unless seeds are given",
+          "items": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string",
+              },
+              {
+                "properties": {
+                  "day": {
+                    "description": "e.g. friday",
+                    "maxLength": 20,
+                    "type": "string",
+                  },
+                  "name": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "stage": {
+                    "maxLength": 40,
+                    "type": "string",
+                  },
+                  "tier": {
+                    "description": "headliner / sub / undercard as printed on the poster (font size). Omit if unknown.",
+                    "enum": [
+                      "headliner",
+                      "sub",
+                      "undercard",
+                      "flat",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "name",
+                ],
+                "type": "object",
+              },
+            ],
+          },
+          "maxItems": 400,
+          "type": "array",
+        },
+        "bpmRange": {
+          "description": "Keep only tracks whose tempo (Deezer) is in this range, e.g. running { min: 160, max: 180 }",
+          "properties": {
+            "max": {
+              "maximum": 300,
+              "minimum": 30,
+              "type": "integer",
+            },
+            "min": {
+              "maximum": 300,
+              "minimum": 30,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+        "days": {
+          "description": "Keep only artists tagged with these days",
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "description": {
+          "maxLength": 300,
+          "type": "string",
+        },
+        "discoveryOnly": {
+          "description": "Skip artists already in the user's top or followed artists",
+          "type": "boolean",
+        },
+        "excludeArtists": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "excludeExplicit": {
+          "type": "boolean",
+        },
+        "excludeSeedArtists": {
+          "description": "similar_songs: leave out every song by the seed songs' artists, for "other artists only" (default false)",
+          "type": "boolean",
+        },
+        "excludeSeedSongs": {
+          "description": "similar_songs: leave the seed songs themselves out (default false: they stay in as anchors)",
+          "type": "boolean",
+        },
+        "excludeTracksFrom": {
+          "description": "Never pick tracks that are in these playlists / "library" (e.g. "songs I do not already have")",
+          "items": {
+            "description": "open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "maxItems": 8,
+          "type": "array",
+        },
+        "lineup": {
+          "description": "Festival name and year, or a short theme, used for the playlist name, e.g. "Glastonbury 2026" or "Rainy Sunday jazz"",
+          "maxLength": 80,
+          "type": "string",
+        },
+        "maxDurationMin": {
+          "description": "Total length cap, e.g. 45 for a commute",
+          "maximum": 100000,
+          "minimum": 10,
+          "type": "integer",
+        },
+        "maxTracks": {
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "name": {
+          "description": "Playlist name; default "<lineup> · Lineupify"",
+          "maxLength": 100,
+          "type": "string",
+        },
+        "order": {
+          "description": "interleave (default, spreads artists), lineup (artist by artist), shuffle, by_day, known_first",
+          "enum": [
+            "interleave",
+            "lineup",
+            "shuffle",
+            "by_day",
+            "known_first",
+          ],
+          "type": "string",
+        },
+        "provider": {
+          "description": "spotify: needs a connected account, can publish. deezer: no account or login at all, every feature except publishing (export the list instead). Default: spotify when connected, otherwise deezer",
+          "enum": [
+            "spotify",
+            "deezer",
+          ],
+          "type": "string",
+        },
+        "public": {
+          "type": "boolean",
+        },
+        "seeds": {
+          "items": {
+            "properties": {
+              "limit": {
+                "description": "max artists from this seed (default 30); for similar_songs, similar songs per seed song (default 25, max 100)",
+                "maximum": 100,
+                "minimum": 1,
+                "type": "integer",
+              },
+              "minShared": {
+                "description": "blend only: sides an artist must appear on (default: all)",
+                "maximum": 4,
+                "minimum": 2,
+                "type": "integer",
+              },
+              "songs": {
+                "description": "similar_songs only: more seed songs (Spotify links/URIs or "Artist - Title"), up to 10",
+                "items": {
+                  "maxLength": 200,
+                  "type": "string",
+                },
+                "maxItems": 10,
+                "type": "array",
+              },
+              "sources": {
+                "description": "blend only: playlist links/names, draft ids, "library" or "me"",
+                "items": {
+                  "maxLength": 200,
+                  "type": "string",
+                },
+                "maxItems": 4,
+                "minItems": 2,
+                "type": "array",
+              },
+              "tier": {
+                "description": "tier for the seeded artists (default flat, or undercard when the typed artists have tiers)",
+                "enum": [
+                  "headliner",
+                  "sub",
+                  "undercard",
+                  "flat",
+                ],
+                "type": "string",
+              },
+              "type": {
+                "description": "genre: any genre/mood/scene words ("shoegaze", "melancholic", "rainy sunday jazz"); similar_to: artists like this one; similar_songs: songs that are listened to together with the given song(s), mostly by other artists (Last.fm + ListenBrainz co-listening data); chart: what is popular now; country: what a country listens to; playlist: the artists of a playlist (link, id, name in your library, "library"); taste: your own top artists; blend: artists several people would all like",
+                "enum": [
+                  "genre",
+                  "similar_to",
+                  "similar_songs",
+                  "chart",
+                  "country",
+                  "playlist",
+                  "taste",
+                  "blend",
+                ],
+                "type": "string",
+              },
+              "value": {
+                "description": "genre words, artist name, country, playlist reference, or for similar_songs one song (Spotify link/URI or "Artist - Title")",
+                "maxLength": 200,
+                "type": "string",
+              },
+            },
+            "required": [
+              "type",
+            ],
+            "type": "object",
+          },
+          "maxItems": 8,
+          "type": "array",
+        },
+        "skipCovers": {
+          "description": "Drop a song when a more popular artist has the original (e.g. a Motörhead cover of Enter Sandman). Off by default; costs one Deezer lookup per track",
+          "type": "boolean",
+        },
+        "sources": {
+          "items": {
+            "enum": [
+              "deezer",
+              "lastfm",
+              "spotify",
+            ],
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "stopIfUnresolved": {
+          "description": "Off by default. When true, create_playlist refuses until every artist is found or excluded, so the user can fix names first",
+          "type": "boolean",
+        },
+        "strictBpm": {
+          "description": "With bpmRange: also drop tracks with no known tempo",
+          "type": "boolean",
+        },
+        "strictYear": {
+          "description": "With yearRange: also drop tracks whose year is unknown or comes from a remaster/compilation",
+          "type": "boolean",
+        },
+        "tracksPerArtist": {
+          "description": "Same count for every artist; overrides tracksPerTier. Use 1 for "one song per artist"",
+          "maximum": 30,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "tracksPerTier": {
+          "properties": {
+            "headliner": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "sub": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "undercard": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+        "yearRange": {
+          "description": "Keep only tracks released in this range, e.g. { from: 1990, to: 1999 }",
+          "properties": {
+            "from": {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer",
+            },
+            "to": {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+      },
+      "type": "object",
+    },
+    "title": "Create playlist draft",
   },
   "create_playlist": {
-    "destructive": false,
-    "inputs": [
-      "allowPartial",
-      "confirm",
-      "draftId",
-      "mode",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "allowPartial": {
+          "type": "boolean",
+        },
+        "confirm": {
+          "type": "boolean",
+        },
+        "draftId": {
+          "type": "string",
+        },
+        "mode": {
+          "enum": [
+            "new",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "draftId",
+      ],
+      "type": "object",
+    },
+    "title": "Create Spotify playlist",
   },
   "delete_draft": {
-    "destructive": true,
-    "inputs": [
-      "draftId",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "draftId": {
+          "type": "string",
+        },
+      },
+      "required": [
+        "draftId",
+      ],
+      "type": "object",
+    },
+    "title": "Delete draft",
   },
   "disconnect": {
-    "destructive": true,
-    "inputs": [
-      "confirm",
-      "purge",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "confirm": {
+          "description": "Required with purge: the user confirmed the deletion in this conversation",
+          "type": "boolean",
+        },
+        "purge": {
+          "description": "Also delete the whole ~/.lineupify data folder",
+          "type": "boolean",
+        },
+      },
+      "type": "object",
+    },
+    "title": "Disconnect Spotify",
   },
   "edit_draft": {
-    "destructive": false,
-    "inputs": [
-      "draftId",
-      "expectedRevision",
-      "ops",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "draftId": {
+          "type": "string",
+        },
+        "expectedRevision": {
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "type": "integer",
+        },
+        "ops": {
+          "items": {
+            "oneOf": [
+              {
+                "properties": {
+                  "ids": {
+                    "description": "Track ids like t_4k2p from get_draft view=tracks (preferred)",
+                    "items": {
+                      "type": "string",
+                    },
+                    "type": "array",
+                  },
+                  "indexes": {
+                    "description": "1-based positions as shown in the same listing",
+                    "items": {
+                      "maximum": 9007199254740991,
+                      "minimum": 1,
+                      "type": "integer",
+                    },
+                    "type": "array",
+                  },
+                  "op": {
+                    "const": "remove_tracks",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "op",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "artist": {
+                    "description": "Draft artist to credit; auto-detected when omitted",
+                    "maxLength": 120,
+                    "type": "string",
+                  },
+                  "op": {
+                    "const": "add_track",
+                    "type": "string",
+                  },
+                  "position": {
+                    "description": "1-based insert position; end when omitted",
+                    "maximum": 9007199254740991,
+                    "minimum": 1,
+                    "type": "integer",
+                  },
+                  "track": {
+                    "description": "spotify:track: URI, open.spotify.com track URL, or "Artist - Title"",
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "op",
+                  "track",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "artist": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "op": {
+                    "const": "exclude_artist",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "op",
+                  "artist",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "artist": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "count": {
+                    "maximum": 50,
+                    "minimum": 0,
+                    "type": "integer",
+                  },
+                  "op": {
+                    "const": "set_artist_track_count",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "op",
+                  "artist",
+                  "count",
+                ],
+                "type": "object",
+              },
+              {
+                "description": "Override which artist a name resolves to when the wrong one was picked; refetches that artist",
+                "properties": {
+                  "artist": {
+                    "maxLength": 120,
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "deezerId": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer",
+                  },
+                  "op": {
+                    "const": "set_artist_source",
+                    "type": "string",
+                  },
+                  "spotifyArtistId": {
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "op",
+                  "artist",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "from": {
+                    "maximum": 9007199254740991,
+                    "minimum": 1,
+                    "type": "integer",
+                  },
+                  "id": {
+                    "type": "string",
+                  },
+                  "op": {
+                    "const": "move",
+                    "type": "string",
+                  },
+                  "to": {
+                    "maximum": 9007199254740991,
+                    "minimum": 1,
+                    "type": "integer",
+                  },
+                },
+                "required": [
+                  "op",
+                  "to",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "op": {
+                    "const": "shuffle",
+                    "type": "string",
+                  },
+                  "seed": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer",
+                  },
+                },
+                "required": [
+                  "op",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "mode": {
+                    "enum": [
+                      "interleave",
+                      "lineup",
+                      "shuffle",
+                      "by_day",
+                      "known_first",
+                    ],
+                    "type": "string",
+                  },
+                  "op": {
+                    "const": "reorder",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "op",
+                  "mode",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "description": {
+                    "maxLength": 300,
+                    "type": "string",
+                  },
+                  "name": {
+                    "maxLength": 100,
+                    "type": "string",
+                  },
+                  "op": {
+                    "const": "set_meta",
+                    "type": "string",
+                  },
+                  "public": {
+                    "type": "boolean",
+                  },
+                },
+                "required": [
+                  "op",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "explicit": {
+                    "description": "true removes explicit tracks",
+                    "type": "boolean",
+                  },
+                  "op": {
+                    "const": "filter",
+                    "type": "string",
+                  },
+                  "versions": {
+                    "description": "false removes live/remix/edit versions",
+                    "type": "boolean",
+                  },
+                },
+                "required": [
+                  "op",
+                ],
+                "type": "object",
+              },
+              {
+                "properties": {
+                  "op": {
+                    "const": "undo",
+                    "type": "string",
+                  },
+                },
+                "required": [
+                  "op",
+                ],
+                "type": "object",
+              },
+            ],
+          },
+          "maxItems": 50,
+          "minItems": 1,
+          "type": "array",
+        },
+      },
+      "required": [
+        "draftId",
+        "ops",
+      ],
+      "type": "object",
+    },
+    "title": "Edit draft",
   },
   "expand_playlist": {
-    "destructive": false,
-    "inputs": [
-      "allowVersions",
-      "bpmRange",
-      "discoveryOnly",
-      "excludeArtists",
-      "excludeExisting",
-      "excludeExplicit",
-      "limitArtists",
-      "maxDurationMin",
-      "maxTracks",
-      "name",
-      "order",
-      "playlist",
-      "provider",
-      "public",
-      "skipCovers",
-      "strictBpm",
-      "strictYear",
-      "tracksPerArtist",
-      "tracksPerTier",
-      "yearRange",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "allowVersions": {
+          "description": "Allow live/remix/edit versions",
+          "type": "boolean",
+        },
+        "bpmRange": {
+          "description": "Keep only tracks whose tempo (Deezer) is in this range, e.g. running { min: 160, max: 180 }",
+          "properties": {
+            "max": {
+              "maximum": 300,
+              "minimum": 30,
+              "type": "integer",
+            },
+            "min": {
+              "maximum": 300,
+              "minimum": 30,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+        "discoveryOnly": {
+          "description": "Skip artists already in the user's top or followed artists",
+          "type": "boolean",
+        },
+        "excludeArtists": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "excludeExisting": {
+          "description": "default true",
+          "type": "boolean",
+        },
+        "excludeExplicit": {
+          "type": "boolean",
+        },
+        "limitArtists": {
+          "description": "default 30",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "maxDurationMin": {
+          "description": "Total length cap, e.g. 45 for a commute",
+          "maximum": 100000,
+          "minimum": 10,
+          "type": "integer",
+        },
+        "maxTracks": {
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "name": {
+          "maxLength": 100,
+          "type": "string",
+        },
+        "order": {
+          "description": "interleave (default, spreads artists), lineup (artist by artist), shuffle, by_day, known_first",
+          "enum": [
+            "interleave",
+            "lineup",
+            "shuffle",
+            "by_day",
+            "known_first",
+          ],
+          "type": "string",
+        },
+        "playlist": {
+          "description": "open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs",
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string",
+        },
+        "provider": {
+          "description": "spotify: needs a connected account, can publish. deezer: no account or login at all, every feature except publishing (export the list instead). Default: spotify when connected, otherwise deezer",
+          "enum": [
+            "spotify",
+            "deezer",
+          ],
+          "type": "string",
+        },
+        "public": {
+          "type": "boolean",
+        },
+        "skipCovers": {
+          "description": "Drop a song when a more popular artist has the original (e.g. a Motörhead cover of Enter Sandman). Off by default; costs one Deezer lookup per track",
+          "type": "boolean",
+        },
+        "strictBpm": {
+          "description": "With bpmRange: also drop tracks with no known tempo",
+          "type": "boolean",
+        },
+        "strictYear": {
+          "description": "With yearRange: also drop tracks whose year is unknown or comes from a remaster/compilation",
+          "type": "boolean",
+        },
+        "tracksPerArtist": {
+          "description": "Same count for every artist; overrides tracksPerTier. Use 1 for "one song per artist"",
+          "maximum": 30,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "tracksPerTier": {
+          "properties": {
+            "headliner": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "sub": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "undercard": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+        "yearRange": {
+          "description": "Keep only tracks released in this range, e.g. { from: 1990, to: 1999 }",
+          "properties": {
+            "from": {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer",
+            },
+            "to": {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+      },
+      "required": [
+        "playlist",
+      ],
+      "type": "object",
+    },
+    "title": "Expand a playlist",
   },
   "export_draft": {
-    "destructive": false,
-    "inputs": [
-      "draftId",
-      "format",
-      "overwrite",
-      "save",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "draftId": {
+          "type": "string",
+        },
+        "format": {
+          "enum": [
+            "markdown",
+            "csv",
+            "m3u",
+            "links",
+            "text",
+          ],
+          "type": "string",
+        },
+        "overwrite": {
+          "type": "boolean",
+        },
+        "save": {
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "draftId",
+      ],
+      "type": "object",
+    },
+    "title": "Export draft",
   },
   "get_draft": {
-    "destructive": false,
-    "inputs": [
-      "draftId",
-      "limit",
-      "offset",
-      "view",
-      "waitSeconds",
-    ],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": true,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "draftId": {
+          "type": "string",
+        },
+        "limit": {
+          "description": "default 50",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "view": {
+          "enum": [
+            "summary",
+            "tracks",
+            "artists",
+            "unresolved",
+          ],
+          "type": "string",
+        },
+        "waitSeconds": {
+          "maximum": 25,
+          "minimum": 0,
+          "type": "integer",
+        },
+      },
+      "type": "object",
+    },
+    "title": "Read draft",
   },
   "list_drafts": {
-    "destructive": false,
-    "inputs": [],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {},
+      "type": "object",
+    },
+    "title": "List drafts",
   },
   "merge_playlists": {
-    "destructive": false,
-    "inputs": [
-      "description",
-      "excludeExplicit",
-      "maxTracks",
-      "name",
-      "order",
-      "playlists",
-      "public",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "description": {
+          "maxLength": 300,
+          "type": "string",
+        },
+        "excludeExplicit": {
+          "type": "boolean",
+        },
+        "maxTracks": {
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "name": {
+          "maxLength": 100,
+          "type": "string",
+        },
+        "order": {
+          "description": "default lineup (playlist after playlist); interleave or shuffle to mix them",
+          "enum": [
+            "interleave",
+            "lineup",
+            "shuffle",
+            "by_day",
+            "known_first",
+          ],
+          "type": "string",
+        },
+        "playlists": {
+          "items": {
+            "description": "open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "maxItems": 6,
+          "minItems": 1,
+          "type": "array",
+        },
+        "public": {
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "playlists",
+      ],
+      "type": "object",
+    },
+    "title": "Merge playlists",
   },
   "parse_lineup": {
-    "destructive": false,
-    "inputs": [
-      "text",
-    ],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": false,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "text": {
+          "maxLength": 20000,
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "text",
+      ],
+      "type": "object",
+    },
+    "title": "Parse lineup text",
   },
   "read_playlist": {
-    "destructive": false,
-    "inputs": [
-      "limit",
-      "offset",
-      "playlist",
-      "refresh",
-      "view",
-    ],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": true,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "limit": {
+          "description": "default 50",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "offset": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "playlist": {
+          "description": "open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs",
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string",
+        },
+        "refresh": {
+          "type": "boolean",
+        },
+        "view": {
+          "enum": [
+            "summary",
+            "tracks",
+            "artists",
+          ],
+          "type": "string",
+        },
+      },
+      "required": [
+        "playlist",
+      ],
+      "type": "object",
+    },
+    "title": "Read a playlist",
   },
   "refresh_taste": {
-    "destructive": false,
-    "inputs": [
-      "allowVersions",
-      "bpmRange",
-      "discoveryOnly",
-      "excludeArtists",
-      "excludeExplicit",
-      "excludeLibrary",
-      "excludePlaylists",
-      "limitArtists",
-      "maxDurationMin",
-      "maxTracks",
-      "name",
-      "order",
-      "provider",
-      "public",
-      "skipCovers",
-      "strictBpm",
-      "strictYear",
-      "tracksPerArtist",
-      "tracksPerTier",
-      "yearRange",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "allowVersions": {
+          "description": "Allow live/remix/edit versions",
+          "type": "boolean",
+        },
+        "bpmRange": {
+          "description": "Keep only tracks whose tempo (Deezer) is in this range, e.g. running { min: 160, max: 180 }",
+          "properties": {
+            "max": {
+              "maximum": 300,
+              "minimum": 30,
+              "type": "integer",
+            },
+            "min": {
+              "maximum": 300,
+              "minimum": 30,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+        "discoveryOnly": {
+          "description": "Skip artists already in the user's top or followed artists",
+          "type": "boolean",
+        },
+        "excludeArtists": {
+          "items": {
+            "type": "string",
+          },
+          "type": "array",
+        },
+        "excludeExplicit": {
+          "type": "boolean",
+        },
+        "excludeLibrary": {
+          "description": "default true",
+          "type": "boolean",
+        },
+        "excludePlaylists": {
+          "description": "Also skip tracks in these playlists",
+          "items": {
+            "description": "open.spotify.com/playlist link, spotify:playlist: URI, playlist id, a playlist name from your own library, a deezer.com/playlist link, a draft id (d_xxxx), or "library" for your liked songs",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string",
+          },
+          "maxItems": 6,
+          "type": "array",
+        },
+        "limitArtists": {
+          "description": "default 30",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "maxDurationMin": {
+          "description": "Total length cap, e.g. 45 for a commute",
+          "maximum": 100000,
+          "minimum": 10,
+          "type": "integer",
+        },
+        "maxTracks": {
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "name": {
+          "maxLength": 100,
+          "type": "string",
+        },
+        "order": {
+          "description": "interleave (default, spreads artists), lineup (artist by artist), shuffle, by_day, known_first",
+          "enum": [
+            "interleave",
+            "lineup",
+            "shuffle",
+            "by_day",
+            "known_first",
+          ],
+          "type": "string",
+        },
+        "provider": {
+          "description": "spotify: needs a connected account, can publish. deezer: no account or login at all, every feature except publishing (export the list instead). Default: spotify when connected, otherwise deezer",
+          "enum": [
+            "spotify",
+            "deezer",
+          ],
+          "type": "string",
+        },
+        "public": {
+          "type": "boolean",
+        },
+        "skipCovers": {
+          "description": "Drop a song when a more popular artist has the original (e.g. a Motörhead cover of Enter Sandman). Off by default; costs one Deezer lookup per track",
+          "type": "boolean",
+        },
+        "strictBpm": {
+          "description": "With bpmRange: also drop tracks with no known tempo",
+          "type": "boolean",
+        },
+        "strictYear": {
+          "description": "With yearRange: also drop tracks whose year is unknown or comes from a remaster/compilation",
+          "type": "boolean",
+        },
+        "tracksPerArtist": {
+          "description": "Same count for every artist; overrides tracksPerTier. Use 1 for "one song per artist"",
+          "maximum": 30,
+          "minimum": 0,
+          "type": "integer",
+        },
+        "tracksPerTier": {
+          "properties": {
+            "headliner": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "sub": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+            "undercard": {
+              "maximum": 30,
+              "minimum": 0,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+        "yearRange": {
+          "description": "Keep only tracks released in this range, e.g. { from: 1990, to: 1999 }",
+          "properties": {
+            "from": {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer",
+            },
+            "to": {
+              "maximum": 2100,
+              "minimum": 1900,
+              "type": "integer",
+            },
+          },
+          "type": "object",
+        },
+      },
+      "type": "object",
+    },
+    "title": "New songs from your favourite artists",
   },
   "search_tracks": {
-    "destructive": false,
-    "inputs": [
-      "limit",
-      "provider",
-      "query",
-    ],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": true,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "limit": {
+          "maximum": 10,
+          "minimum": 1,
+          "type": "integer",
+        },
+        "provider": {
+          "description": "Match the draft you will add to",
+          "enum": [
+            "spotify",
+            "deezer",
+          ],
+          "type": "string",
+        },
+        "query": {
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "query",
+      ],
+      "type": "object",
+    },
+    "title": "Search tracks",
   },
   "setup": {
-    "destructive": false,
-    "inputs": [
-      "clientId",
-      "lastfmApiKey",
-      "redirectPort",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "clientId": {
+          "type": "string",
+        },
+        "lastfmApiKey": {
+          "type": "string",
+        },
+        "redirectPort": {
+          "maximum": 9007199254740991,
+          "minimum": -9007199254740991,
+          "type": "integer",
+        },
+      },
+      "type": "object",
+    },
+    "title": "Save Spotify client ID",
   },
   "status": {
-    "destructive": false,
-    "inputs": [],
-    "readOnly": true,
+    "annotations": {
+      "openWorldHint": true,
+      "readOnlyHint": true,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {},
+      "type": "object",
+    },
+    "title": "Lineupify status",
   },
   "update_playlist": {
-    "destructive": true,
-    "inputs": [
-      "draftId",
-      "force",
-    ],
-    "readOnly": false,
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "draftId": {
+          "type": "string",
+        },
+        "force": {
+          "type": "boolean",
+        },
+      },
+      "required": [
+        "draftId",
+      ],
+      "type": "object",
+    },
+    "title": "Update Spotify playlist",
   },
 }
 `;

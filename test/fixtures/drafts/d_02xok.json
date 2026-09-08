@@ -1,0 +1,48 @@
+{
+  "id": "d_02xok",
+  "name": "Sunfall 2026 · Lineupify",
+  "description": "",
+  "public": false,
+  "createdAt": "2026-09-04T10:00:00.000Z",
+  "updatedAt": "2026-09-04T10:00:41.000Z",
+  "revision": 2,
+  "status": "ready",
+  "progress": { "done": 3, "total": 3 },
+  "spotifyUserId": "user02x",
+  "options": {
+    "tracksPerTier": { "headliner": 5, "sub": 3, "undercard": 2 },
+    "maxTracks": 250,
+    "order": "interleave",
+    "excludeArtists": [],
+    "excludeExplicit": false,
+    "allowVersions": false,
+    "discoveryOnly": false,
+    "stopIfUnresolved": false,
+    "public": false,
+    "sources": ["deezer", "lastfm", "spotify"],
+    "yearRange": { "from": 2015 },
+    "excludeTracksFrom": ["library"]
+  },
+  "artists": [
+    { "key": "fred again", "name": "Fred again..", "tier": "headliner", "status": "resolved", "resolved": { "name": "Fred again..", "source": "deezer", "deezerId": 76053262, "nbFan": 120000, "confidence": "high" }, "queriesTried": ["deezer:Fred again.."], "target": 2, "spotifyArtistId": "4oLeXFyACqeem2VImYeBFe" },
+    { "key": "wet leg", "name": "Wet Leg", "tier": "sub", "status": "resolved", "resolved": { "name": "Wet Leg", "source": "deezer", "deezerId": 129012662, "nbFan": 60000, "confidence": "high" }, "target": 1, "origin": "similar_to \"Fred again..\"" },
+    { "key": "dj fluffhead", "name": "DJ Fluffhead", "tier": "undercard", "status": "unresolved", "reason": "not found in Deezer, Last.fm or Spotify", "queriesTried": ["deezer:DJ Fluffhead", "spotify:DJ Fluffhead"], "target": 2 }
+  ],
+  "tracks": [
+    { "id": "t_4k2p", "uri": "spotify:track:2xLMifQCjDGFmkHkpNLD9h", "spotifyId": "2xLMifQCjDGFmkHkpNLD9h", "name": "Marea (we've lost dancing)", "artists": ["Fred again..", "The Blessed Madonna"], "artistKey": "fred again", "durationMs": 292000, "explicit": false, "isrc": "GBAHS2100041", "album": "Actual Life (April 14 - December 17 2020)", "matchedVia": "isrc", "source": "deezer", "role": "lead", "year": 2021, "rank": 900000 },
+    { "id": "t_c81z", "uri": "spotify:track:6Ow4v1Ejf9DdDp1QsHqHUp", "spotifyId": "6Ow4v1Ejf9DdDp1QsHqHUp", "name": "Chaise Longue", "artists": ["Wet Leg"], "artistKey": "wet leg", "durationMs": 197000, "explicit": true, "isrc": "GBCEL2100271", "album": "Wet Leg", "matchedVia": "isrc", "source": "deezer", "role": "lead", "year": 2022, "yearUncertain": true, "bpm": 143 },
+    { "id": "t_m0r3", "uri": "spotify:track:0KKkJNfGyhkQ5aFogxQAPU", "spotifyId": "0KKkJNfGyhkQ5aFogxQAPU", "name": "Danielle (smile on my face)", "artists": ["Fred again..", "Anderson .Paak"], "artistKey": "fred again", "durationMs": 231000, "explicit": false, "isrc": "GBAHS2200111", "matchedVia": "text", "source": "lastfm", "role": "lead", "year": 2022 },
+    { "id": "t_9x1c", "uri": "spotify:track:1Fid2jjqsHViMjXuiUTIQ4", "spotifyId": "1Fid2jjqsHViMjXuiUTIQ4", "name": "Baby again..", "artists": ["Fred again..", "Skrillex", "Four Tet"], "artistKey": "fred again", "durationMs": 300000, "explicit": false, "matchedVia": "isrc", "source": "deezer", "role": "featured", "year": 2023 }
+  ],
+  "rules": [{ "op": "set_meta", "payload": { "op": "set_meta", "public": false } }],
+  "viewedAt": "2026-09-04T10:00:30.000Z",
+  "seeds": [
+    { "type": "similar_to", "value": "Fred again..", "limit": 5, "id": "s_1a2b", "status": "done", "added": 1, "note": "Deezer related to Fred again.. (5)" },
+    { "type": "genre", "value": "zzz nothing", "id": "s_3c4d", "status": "failed", "error": "no public Deezer playlists match \"zzz nothing\"" }
+  ],
+  "excludeTracks": { "uris": ["spotify:track:0000000000000000000000"], "isrcs": [], "songKeys": [], "resolved": true, "note": "your liked songs (1 tracks)" },
+  "buildNotes": ["skipCovers: nothing looked like a cover"],
+  "playlistId": "3cEYpjA9oz9GiPac4AsH4n",
+  "playlistUrl": "https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n",
+  "snapshotId": "AAAAA02x"
+}
