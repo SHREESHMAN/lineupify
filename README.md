@@ -1,13 +1,51 @@
-# Lineupify
+<p align="center">
+  <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/lineupify.png" width="240" alt="Lineupify">
+</p>
 
-[![CI](https://github.com/SHREESHMAN/lineupify/actions/workflows/ci.yml/badge.svg)](https://github.com/SHREESHMAN/lineupify/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/lineupify-mcp)](https://www.npmjs.com/package/lineupify-mcp) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<h1 align="center">Lineupify</h1>
 
-**Say what you want to hear. Get a Spotify playlist in seconds, in your own account, that you can read, edit and trust.**
+<p align="center"><strong>Say what you want to hear. Get a playlist you can read, edit and trust, in your own account.</strong></p>
 
-Lineupify is an MCP server for Claude Desktop, Claude Code, Cursor and any other MCP host. Paste a festival poster, describe a mood, name an artist you like, point at a playlist, or blend two people's playlists. Lineupify finds the artists, picks their most popular songs, matches them to Spotify and builds a draft you can review before anything is published. You bring a free Spotify developer app (two minutes, no client secret). Everything else runs on your machine.
+<p align="center">
+  <a href="https://github.com/SHREESHMAN/lineupify/actions/workflows/ci.yml"><img src="https://github.com/SHREESHMAN/lineupify/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/lineupify-mcp"><img src="https://img.shields.io/npm/v/lineupify-mcp" alt="npm"></a>
+  <a href="https://registry.modelcontextprotocol.io/?search=lineupify"><img src="https://img.shields.io/badge/MCP%20Registry-io.github.SHREESHMAN%2Flineupify-blue" alt="MCP Registry"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
+</p>
 
-- npm: `lineupify-mcp` (Node.js 20 or newer)
-- Guides: [Spotify app setup](docs/setup-spotify.md) · [Hosts](docs/hosts.md) · [Troubleshooting](docs/troubleshooting.md) · [Security](SECURITY.md)
+Lineupify is an [MCP](https://modelcontextprotocol.io) server for Claude Desktop, Claude Code, Cursor and any other MCP host. Paste a festival poster, describe a mood, name an artist or a song you like, point at a playlist, or blend two people's playlists. Lineupify finds the artists, picks their most popular songs, matches them exactly (by ISRC) and builds a draft you can review and edit before anything is published to Spotify. Everything runs on your machine; there is no Lineupify server and no telemetry.
+
+| | Spotify | Deezer mode |
+|---|---|---|
+| **What you need** | A Spotify Premium account and a free Spotify developer app (2 minutes, no secret) | Nothing. No account, no key |
+| **What you get** | Playlists created in your Spotify account, plus reading and comparing your own playlists and library | Drafts with Deezer links that you export and import anywhere (Deezer, Apple Music, YouTube Music) |
+| **Why the difference** | Spotify only lets a new app serve its owner, who must have Premium | Deezer's public API is keyless, but Deezer no longer issues write credentials |
+
+Both need Node.js 20 or newer. Package: `lineupify-mcp` on npm.
+
+## Contents
+
+- [Why](#why)
+- [Quick start](#quick-start)
+  - [Option A: let your assistant install it](#option-a-let-your-assistant-install-it)
+  - [Option B: guided setup in a terminal](#option-b-guided-setup-in-a-terminal)
+  - [Option C: one click for Claude Desktop](#option-c-one-click-for-claude-desktop)
+  - [No Spotify, or no Premium? Deezer mode](#no-spotify-or-no-premium-deezer-mode)
+  - [Spotify without Premium: borrow a friend's app](#spotify-without-premium-borrow-a-friends-app)
+- [What a conversation looks like](#what-a-conversation-looks-like)
+- [How it works](#how-it-works)
+- [Reference](#reference)
+  - [Tools](#tools)
+  - [`edit_draft` operations](#edit_draft-operations)
+  - [Seeds](#seeds-playlists-without-typing-artists)
+  - [`create_draft` options](#create_draft-options)
+  - [CLI](#cli-reference)
+  - [Configuration](#configuration)
+- [Privacy, data and terms](#privacy-data-and-terms)
+- [Limits and known issues](#limits-and-known-issues)
+- [Development](#development)
+- [Credits](#credits)
+- [License](#license)
 
 ## Why
 
@@ -24,66 +62,59 @@ Streaming apps are good at playing music and bad at letting you say what you wan
 
 Lineupify answers each of these with a draft you can see, a reason for every track, and a playlist that ends up in your own account.
 
-```mermaid
-flowchart LR
-    subgraph give[What you give]
-        A[Festival poster or lineup text]
-        B[A description or a mood]
-        C[An artist you like]
-        D[A country or the charts]
-        E[A playlist link or your library]
-        F[Two or more people's playlists]
-    end
-    subgraph engine[Lineupify]
-        G[Artists]
-        H[Most popular songs per artist]
-        I[Matched to Spotify by ISRC]
-        J[Filters, dedupe, order]
-        K[Draft you can read and edit]
-    end
-    L[(Your Spotify account)]
-    M[CSV / M3U / Markdown]
-    A --> G
-    B --> G
-    C --> G
-    D --> G
-    E --> G
-    F --> G
-    G --> H --> I --> J --> K
-    K -->|create_playlist| L
-    K -->|export_draft| M
-```
+> 📷 *Screenshot placeholder: a Claude Desktop chat showing "Make me a playlist for this lineup" with a poster attached, and the draft summary that comes back.*
 
 ## Quick start
 
-The one step nobody can skip is creating a Spotify app, because Spotify only lets new apps serve their owner. Everything after that is one command.
+Pick one of the three ways to install. All of them end with the same server registered in your host; the Spotify app is the only step nobody can automate, because it is created in your Spotify account.
 
-1. **Create a Spotify app** (2 minutes). Go to https://developer.spotify.com/dashboard, click *Create app*, pick *Web API*, set the Redirect URI to exactly `http://127.0.0.1:8765/callback`, save, and copy the **Client ID**. No client secret is needed. Full walkthrough: [docs/setup-spotify.md](docs/setup-spotify.md).
-2. **Run the guided setup** in a terminal (needs Node.js 20 or newer):
+### Option A: let your assistant install it
+
+If your assistant can run terminal commands (Claude Code, Cursor, and similar), paste this into a chat and follow along:
+
+> Install the Lineupify MCP server for me and guide me through it. It is the npm package `lineupify-mcp` (https://www.npmjs.com/package/lineupify-mcp); read its README at https://github.com/SHREESHMAN/lineupify first. Ask me whether I have a Spotify Premium account. If yes, walk me through creating a Spotify app at https://developer.spotify.com/dashboard with the Redirect URI `http://127.0.0.1:8765/callback`, ask me for the Client ID, then run `npx -y lineupify-mcp setup --client-id <id>` and `npx -y lineupify-mcp auth`, and tell me when to approve the login in my browser. If no, skip Spotify: Deezer mode needs nothing. Then run `npx -y lineupify-mcp install --claude-code` (or `--cursor` / `--claude-desktop`, whichever host you are running in), then `npx -y lineupify-mcp doctor`, show me the result, and tell me what to say next. On Windows run npx through `cmd /c`.
+
+If Lineupify is already registered but Spotify is not connected (the one-click route, or a hand-written config), paste this instead:
+
+> Call Lineupify's `status` tool. If Spotify is not connected, call `connect` with my Client ID PASTE_CLIENT_ID_HERE, tell me to approve the login in the browser, then call `status` again to confirm.
+
+### Option B: guided setup in a terminal
+
+1. **Create a Spotify app** (2 minutes; skip for Deezer mode). Go to https://developer.spotify.com/dashboard, click *Create app*, tick *Web API*, set the Redirect URI to exactly `http://127.0.0.1:8765/callback`, save, then copy the **Client ID** from the app's Settings page. No client secret is needed. Full walkthrough with every field: [docs/setup-spotify.md](docs/setup-spotify.md).
+
+   > 📷 *Screenshot placeholder: the Spotify dashboard "Create app" form with Web API ticked and the Redirect URI filled in.*
+
+   > 📷 *Screenshot placeholder: the app's Settings page with the Client ID highlighted (and the client secret left alone).*
+
+2. **Run the guided setup**:
 
    ```
    npx -y lineupify-mcp init
    ```
 
-   It takes the Client ID, logs you in through your browser, adds Lineupify to Claude Desktop, Claude Code or Cursor (whichever it finds), and runs a health check. Prefer clicking? Claude Desktop users can instead download `lineupify-<version>.mcpb` from the [releases page](https://github.com/SHREESHMAN/lineupify/releases) and double-click it (Node.js 20 or newer must still be installed).
+   It takes the Client ID, logs you in through your browser, adds Lineupify to Claude Desktop, Claude Code or Cursor (whichever it finds), and runs a health check. Every step can be skipped. Restart your host afterwards.
 
-   **Or let your assistant do step 2.** If your assistant can run terminal commands (Claude Code, Cursor, and similar), paste this, with your Client ID filled in:
+   > 📷 *Screenshot placeholder: terminal output of `init` ending in the doctor table with every line OK.*
 
-   > Set up the Lineupify MCP server for me. Run `npx -y lineupify-mcp setup --client-id PASTE_CLIENT_ID_HERE`, then `npx -y lineupify-mcp auth` and tell me when to approve the login in my browser, then `npx -y lineupify-mcp install --claude-code` (or `--cursor` / `--claude-desktop` for the host you are running in), then `npx -y lineupify-mcp doctor` and show me the result. Windows users: run npx through `cmd /c`.
-
-   If the server is already added but not connected (the `.mcpb` route, or a hand-written config), paste this in any chat:
-
-   > Call Lineupify's `status` tool. If Spotify is not connected, call `connect` with my Client ID PASTE_CLIENT_ID_HERE, tell me to approve the login in the browser, then call `status` again to confirm.
 3. **Ask for a playlist.** Any of these work:
    - "Make me a playlist for this lineup" *(paste the poster text or attach the image)*
    - "Rainy Sunday jazz for cooking, about an hour, nothing explicit"
    - "Artists like Khruangbin, two songs each"
+   - "Songs like Ritviz – Udd Gaye, other artists only"
    - "New songs from my favourite artists that I have not liked yet"
    - "What does my friend's playlist have in common with mine? Then make us a mix."
 
-### No Spotify, or no Spotify Premium? Deezer mode
+### Option C: one click for Claude Desktop
 
-Spotify only lets a new app serve its owner, and that owner needs Premium. If that is not you, skip steps 1 and 2 entirely: add Lineupify to your host ([docs/hosts.md](docs/hosts.md)) and ask for a playlist. With no Spotify login, drafts build on **Deezer** automatically (or say "use Deezer"; the option is `provider: "deezer"`). Deezer's public API is keyless, so there is nothing to create, paste or approve.
+Download `lineupify-<version>.mcpb` from the [releases page](https://github.com/SHREESHMAN/lineupify/releases) and double-click it (or drag it onto Claude Desktop). Paste your Client ID into the form, or leave it empty for Deezer mode. Node.js 20 or newer must still be installed. Then say "connect Lineupify to Spotify" in a chat.
+
+> 📷 *Screenshot placeholder: the Claude Desktop install dialog for the .mcpb bundle with the Client ID field.*
+
+Other hosts, the config-file route, and running two hosts at once: [docs/hosts.md](docs/hosts.md).
+
+### No Spotify, or no Premium? Deezer mode
+
+Skip the Spotify app entirely: add Lineupify to your host and ask for a playlist. With no Spotify login, drafts build on **Deezer** automatically (or say "use Deezer"; the option is `provider: "deezer"`). Deezer's public API is keyless, so there is nothing to create, paste or approve.
 
 What works in Deezer mode: every seed except your own Spotify taste, every filter, reading, analysing, comparing and merging Deezer playlists and drafts, editing, and all exports. What does not: publishing into an account. Deezer stopped issuing API credentials to new apps in 2025, so no tool can write to a Deezer account today. If Deezer reopens its API, publishing will be added.
 
@@ -91,19 +122,21 @@ What works in Deezer mode: every seed except your own Spotify taste, every filte
 
 1. Ask for the export: "export this draft as links" (`export_draft`, `format: "links"`; `"text"` gives "Artist - Title" lines instead).
 2. Open [TuneMyMusic](https://www.tunemymusic.com) or [Soundiiz](https://soundiiz.com), choose *import from text* (TuneMyMusic: *Let's start → Upload text*; Soundiiz: *Import playlist → From text*), and paste the list.
-3. Pick Deezer as the destination and confirm. The tool logs into your Deezer account itself; nothing about your account ever passes through Lineupify.
+3. Pick the destination service and confirm. The transfer tool logs into your account itself; nothing about your account ever passes through Lineupify.
 
 Both tools have free tiers that cover a normal playlist.
 
-### Spotify without Premium: borrow an app
+> 📷 *Screenshot placeholder: the exported links pasted into TuneMyMusic's "Upload text" box.*
+
+### Spotify without Premium: borrow a friend's app
 
 Spotify's Premium rule applies to the person who *owns* the developer app, not to everyone who uses it. An owner can add up to four other people by email under *User Management* in the dashboard (five users per app in total), and those people log in with their own accounts, free ones included. So if someone you know has Premium:
 
-1. They create the app as in step 1 above and add your Spotify account email under *User Management*.
+1. They create the app as in Option B step 1 and add your Spotify account email under *User Management*.
 2. They give you the Client ID (it is not a secret; the secret is never used).
 3. You run `npx -y lineupify-mcp init` with that Client ID and log in as yourself. Your tokens stay on your machine; the owner never sees your account.
 
-Two limits: an app serves five people at most at the time of writing, and the owner's daily API quota is shared across all of them and all of the owner's apps. Handing the Client ID to someone who is not on the User Management list does nothing; their login fails with a 403. Fine for friends and family; not a way to serve strangers, which Spotify's terms also rule out. Details: [docs/setup-spotify.md](docs/setup-spotify.md#using-a-friends-app-no-premium).
+Two limits: an app serves five people at most, and the owner's daily API quota is shared across all of them and all of the owner's apps. Handing the Client ID to someone who is not on the User Management list does nothing; their login fails with a 403. Fine for friends and family; not a way to serve strangers, which Spotify's terms also rule out. Details: [docs/setup-spotify.md](docs/setup-spotify.md#using-a-friends-app-no-premium).
 
 ## What a conversation looks like
 
@@ -122,7 +155,7 @@ Two limits: an app serves five people at most at the time of writing, and the ow
 The assistant calls `parse_lineup`, which returns nine artists with tiers and drops the dates and ticket line, then `create_draft` with `lineup: "Sunfall 2026"`. The draft comes back within about 15 seconds; a big lineup keeps building in the background:
 
 ```
-Draft d_7k2mq "Sunfall 2026 · Lineupify"  rev 1  status ready  spotify: Alex
+Draft d_7k2mq "Sunfall 2026 · Lineupify"  rev 1  status ready  provider spotify  spotify: Alex
 Artists 9 (resolved 8 · unresolved 1)
 Tracks 27 · 1h42m · explicit 6 · via isrc 25 / text 2 · sources dz 27 / lfm 0 / sp 0
 Tiers headliner 2×5 · sub 3×3 · undercard 4×2 · order interleave · private
@@ -150,6 +183,8 @@ URL: https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n
 ```
 
 Later edits go through `edit_draft` followed by `update_playlist`, which replaces the playlist contents in place.
+
+> 📷 *Screenshot placeholder: the finished playlist open in Spotify, named "Sunfall 2026 · Lineupify".*
 
 ### A mood
 
@@ -191,11 +226,41 @@ Tracks 10 · 33:57 · explicit 1
 Every request becomes an artist list, and every artist list goes through the same pipeline. Nothing touches Spotify until you publish.
 
 ```mermaid
+flowchart LR
+    subgraph give[What you give]
+        A[Festival poster or lineup text]
+        B[A description or a mood]
+        C[An artist or a song you like]
+        D[A country or the charts]
+        E[A playlist link or your library]
+        F[Two or more people's playlists]
+    end
+    subgraph engine[Lineupify]
+        G[Artists]
+        H[Most popular songs per artist]
+        I[Matched by ISRC]
+        J[Filters, dedupe, order]
+        K[Draft you can read and edit]
+    end
+    L[(Your Spotify account)]
+    M[CSV / M3U / links / text]
+    A --> G
+    B --> G
+    C --> G
+    D --> G
+    E --> G
+    F --> G
+    G --> H --> I --> J --> K
+    K -->|create_playlist| L
+    K -->|export_draft| M
+```
+
+```mermaid
 flowchart TD
-    A[artists and/or seeds] --> B[Expand seeds in the background<br/>genre · similar_to · chart · country · playlist · taste · blend]
+    A[artists and/or seeds] --> B[Expand seeds in the background<br/>genre · similar_to · similar_songs · chart · country · playlist · taste · blend]
     B --> C[Resolve each artist<br/>Deezer → Last.fm → Spotify]
     C --> D[Ranked candidate songs<br/>lead tracks first, featured next, live/remix last]
-    D --> E[Match to Spotify by ISRC<br/>text search as fallback]
+    D --> E[Match by ISRC<br/>text search as fallback]
     E --> F{Filters}
     F -->|yearRange · bpmRange · explicit · excludeTracksFrom| G[Dedupe by URI, ISRC and title+artist]
     G --> H[Per-tier counts and maxTracks cap]
@@ -203,12 +268,12 @@ flowchart TD
     I --> J[(Draft on disk<br/>revisions, undo)]
     J -->|get_draft / edit_draft| J
     J -->|create_playlist| K[Spotify playlist]
-    J -->|export_draft| L[CSV · M3U · Markdown]
+    J -->|export_draft| L[CSV · M3U · links · text · Markdown]
 ```
 
-Why Deezer and Last.fm for ranking? Spotify no longer exposes top tracks, recommendations, related artists, genres or audio features to new apps. Deezer's public API is keyless and gives popularity, related artists, tempo and playlists; Last.fm (optional key) adds tags, similar artists and per-country charts. Spotify is where the playlist ends up, and ISRC codes make the match exact.
+Why Deezer and Last.fm for ranking? Spotify no longer exposes top tracks, recommendations, related artists, genres or audio features to new apps. Deezer's public API is keyless and gives popularity, related artists, tempo and playlists; Last.fm (optional key) adds tags, similar artists, similar songs and per-country charts; ListenBrainz (open data) adds song-level neighbours. Spotify is where the playlist ends up, and ISRC codes make the match exact.
 
-A draft is a small state machine, checkpointed to disk after every artist so a killed process resumes where it stopped:
+A draft is a small state machine, checkpointed to disk after every artist, so a killed process resumes where it stopped:
 
 ```mermaid
 stateDiagram-v2
@@ -222,16 +287,18 @@ stateDiagram-v2
     published --> published: edit_draft + update_playlist
 ```
 
-## Tools
+## Reference
+
+### Tools
 
 | Tool | What it does | Key parameters |
 |---|---|---|
 | `status` | Call first. Shows connection state (and as whom), setup steps if needed, token expiry, defaults, drafts in progress, cache size, data directory and any read-only mode. | none |
 | `setup` | Saves the Spotify Client ID (and optionally a Last.fm key or a fixed redirect port) to `config.json`. | `clientId`, `lastfmApiKey`, `redirectPort` |
 | `connect` | Starts the Spotify login: opens the browser and returns the URL immediately. Pass `clientId` to save the app's Client ID in the same call. Refused while a draft is building. | `clientId`, `force` (switch account / re-login) |
-| `disconnect` | Forgets the Spotify login; with `purge: true` (plus `confirm: true`, after you agreed in the conversation) deletes the whole `~/.lineupify` folder. Refuses if that folder holds files Lineupify did not create. Tells you where to remove the app's access on Spotify's side. | `purge`, `confirm` |
+| `disconnect` | Forgets the Spotify login; with `purge: true` and `confirm: true` deletes the whole `~/.lineupify` folder. Tells you where to remove the app's access on Spotify's side. | `purge`, `confirm` |
 | `parse_lineup` | Turns raw poster text into a clean artist list with tiers, days and stages; drops dates, stage names and "tickets" lines. | `text` |
-| `create_draft` | Builds a draft from artists and/or seeds (genre, similar artist, chart, country, playlist, your taste, a blend). Returns within ~15 s; larger builds continue in the background. | `artists` and/or `seeds`, `lineup`, `name`, `tracksPerTier`, `tracksPerArtist`, `maxTracks`, `maxDurationMin`, `order`, `yearRange`, `bpmRange`, `skipCovers`, `excludeTracksFrom`, … (see below) |
+| `create_draft` | Builds a draft from artists and/or seeds (genre, similar artist, similar songs, chart, country, playlist, your taste, a blend). Returns within ~15 s; larger builds continue in the background. | `artists` and/or `seeds`, `lineup`, `name`, `tracksPerTier`, `tracksPerArtist`, `maxTracks`, `maxDurationMin`, `order`, `yearRange`, `bpmRange`, `skipCovers`, `excludeTracksFrom`, `provider`, … (see [options](#create_draft-options)) |
 | `get_draft` | Shows a draft: `summary` (default), `tracks` (paged, with stable ids, year and tempo), `artists`, or `unresolved`. Waits for progress while building. Also resumes an interrupted build. | `draftId` (omit for latest), `view`, `offset`, `limit`, `waitSeconds` (max 25) |
 | `edit_draft` | Applies one or more edits atomically. Ops: `remove_tracks`, `add_track`, `exclude_artist`, `set_artist_track_count`, `set_artist_source`, `move`, `shuffle`, `reorder`, `set_meta`, `filter`, `undo`. | `draftId`, `ops` (1-50), `expectedRevision` |
 | `search_tracks` | Searches Spotify, or Deezer for a Deezer draft, for a track to add manually; supports `track:` / `artist:` filters. | `query`, `limit` (max 10), `provider` |
@@ -241,7 +308,7 @@ stateDiagram-v2
 | `read_playlist` | Reads any playlist into a list: a Spotify or Deezer link, a playlist name from your library, a draft id, or `library` (liked songs). Views: `summary`, `tracks`, `artists`. Cached 12 h. | `playlist`, `view`, `offset`, `limit`, `refresh` |
 | `analyze_playlist` | Numbers about a playlist: length, artist concentration, decades, explicit share, coarse genres (Deezer) and Last.fm tags, sampled tempo. | `playlist`, `genres`, `tempo` |
 | `compare_playlists` | Compares 2-4 playlists, drafts, `library` or `me` (your top and followed artists): shared artists and tracks, pairwise overlap, what is distinct to each. | `sources` |
-| `merge_playlists` | One deduplicated draft from 1-6 Spotify playlists, drafts or `library`, keeping the actual tracks. | `playlists`, `name`, `order`, `excludeExplicit`, `maxTracks` |
+| `merge_playlists` | One deduplicated draft from 1-6 playlists, drafts or `library`, keeping the actual tracks. | `playlists`, `name`, `order`, `excludeExplicit`, `maxTracks` |
 | `expand_playlist` | More songs by the artists of a playlist, minus what it already has. | `playlist`, `limitArtists`, `tracksPerArtist`, plus the build options |
 | `refresh_taste` | New songs from your own top and followed artists, minus your liked songs. | `limitArtists`, `tracksPerArtist`, `excludePlaylists`, plus the build options |
 | `export_draft` | Returns the draft as Markdown, CSV (with ISRC, year, tempo, provider, URLs), M3U, `links` (one track URL per line) or `text` ("Artist - Title" per line); the last two are what transfer tools accept. With `save: true` writes a file under `~/.lineupify/exports/`. | `draftId`, `format`, `save`, `overwrite` |
@@ -255,7 +322,7 @@ Errors come back as `CODE: message` plus a `Fix:` line; every code is listed in 
 | Op | Fields | Notes |
 |---|---|---|
 | `remove_tracks` | `ids` (from `get_draft view=tracks`, preferred) and/or `indexes` (1-based) | |
-| `add_track` | `track` (`spotify:track:` URI, open.spotify.com URL, or `"Artist - Title"`), `artist`, `position` | Use `search_tracks` first for an exact URI. |
+| `add_track` | `track` (`spotify:track:` URI, open.spotify.com URL, or `"Artist - Title"`), `artist`, `position` | `"Artist - Title"` must match a real hit on both; use `search_tracks` first for an exact URI. |
 | `exclude_artist` | `artist` | Removes the artist's tracks and stops fetching more. |
 | `set_artist_track_count` | `artist`, `count` (0-50) | Raising the count fetches more tracks. |
 | `set_artist_source` | `artist`, `deezerId` and/or `spotifyArtistId` | Fixes a wrong artist match and refetches. |
@@ -268,7 +335,7 @@ Errors come back as `CODE: message` plus a `Fix:` line; every code is listed in 
 
 While a draft is still building, only `exclude_artist`, `set_artist_track_count`, `set_artist_source`, `filter` and `set_meta` are accepted. Pass `expectedRevision` from the last `get_draft` so an edit never applies to a list you have not seen.
 
-## Seeds: playlists without typing artists
+### Seeds: playlists without typing artists
 
 The engine only needs an artist list. A **seed** produces one for you, alone or alongside typed artists.
 
@@ -299,9 +366,7 @@ Recipes the assistant can run in one call:
 
 `read_playlist`, `analyze_playlist` and `compare_playlists` return plain data lines (counts, decades, genres, tempo buckets, overlap percentages). The assistant turns them into words, tables or charts; the server never draws.
 
-No Spotify account for the other person? `export_draft` gives Markdown, CSV or M3U they can take anywhere.
-
-## `create_draft` options
+### `create_draft` options
 
 | Option | Default | Meaning |
 |---|---|---|
@@ -331,9 +396,9 @@ No Spotify account for the other person? `export_draft` gives Markdown, CSV or M
 | `excludeSeedSongs` | `false` | `similar_songs`: leave the seed songs themselves out. |
 | `excludeSeedArtists` | `false` | `similar_songs`: leave out every song by the seed songs' artists ("other artists only"). |
 
-Every summary and publish result ends with the artists that were not found or had no playable Spotify track, and what to do about them. Defaults can be changed permanently with `lineupify-mcp config set` (see Configuration).
+Every summary and publish result ends with the artists that were not found or had no playable Spotify track, and what to do about them. Defaults can be changed permanently with `lineupify-mcp config set` (see [Configuration](#configuration)).
 
-## CLI reference
+### CLI reference
 
 Running `lineupify-mcp` with no arguments serves MCP over stdio; that is what your host runs. The subcommands below are for a normal terminal (`npx -y lineupify-mcp <command>` or, after a global install, `lineupify-mcp <command>`).
 
@@ -342,9 +407,9 @@ Running `lineupify-mcp` with no arguments serves MCP over stdio; that is what yo
 | `init` | Guided setup in one run: Client ID, Spotify login, host install, health check. Each step can be skipped. |
 | `setup --client-id <id> [--port <n>] [--lastfm-key <key>]` | Save the Client ID (32 hex chars), a fixed redirect port, or a Last.fm key to `config.json`. With no flags it prints the Spotify setup steps. |
 | `auth [--force]` | Log in to Spotify from the terminal (opens the browser, waits up to 5 minutes). `--force` re-logs in or switches account. |
-| `logout [--purge]` | Forget the Spotify login. `--purge` also deletes `~/.lineupify` (config, caches, drafts, exports). |
+| `logout [--purge]` | Forget the Spotify login. `--purge` also deletes `~/.lineupify` (config, caches, drafts, exports); refuses if the folder holds anything Lineupify did not create. |
 | `doctor` | Checks Node.js, data directory, Client ID, redirect port/URI, token age and scopes, `GET /me`, Deezer reachability and the Last.fm key, then prints MCP config snippets for every host. Exit code 1 if anything failed. |
-| `install --claude-desktop \| --claude-code \| --cursor` | Writes the `lineupify` entry into the host's config (a `.bak` copy is kept for Claude Desktop) or runs `claude mcp add` for you. |
+| `install --claude-desktop \| --claude-code \| --cursor` | Writes the `lineupify` entry into the host's config (a `.bak` copy is kept; an unparseable config is left untouched) or runs `claude mcp add` for you. |
 | `config get` | Print `config.json` (Last.fm key masked). |
 | `config set <key> <value>` | Change a default (keys below). |
 | `config reset` | Reset all defaults; keeps Client ID, port and Last.fm key. |
@@ -357,7 +422,7 @@ Example `doctor` output:
 
 ```
 OK   Node.js          22.11.0
-OK   Data dir         /home/alex/.lineupify
+OK   Data dir         ~/.lineupify
 OK   Client ID        set (config.json)
 OK   Redirect URI     http://127.0.0.1:8765/callback (port free; this exact URI must be in the app's Redirect URIs)
 OK   Spotify login    Alex; refresh token valid 171 more days
@@ -366,11 +431,11 @@ OK   Deezer           HTTP 200
 OK   Last.fm key      not set (optional)
 ```
 
-## Configuration
+### Configuration
 
 Settings are read from environment variables first, then from `~/.lineupify/config.json`. An environment variable always wins over the file.
 
-### Environment variables
+#### Environment variables
 
 | Variable | Purpose |
 |---|---|
@@ -385,7 +450,7 @@ Settings are read from environment variables first, then from `~/.lineupify/conf
 
 Pass them through your host's `env` block (see [docs/hosts.md](docs/hosts.md)).
 
-### `config.json`
+#### `config.json`
 
 ```json
 {
@@ -408,7 +473,7 @@ Pass them through your host's `env` block (see [docs/hosts.md](docs/hosts.md)).
 
 `spotifyRedirectPort` and `lastfmApiKey` are optional. Everything under `defaults` is optional and overrides the built-in defaults listed in the options table.
 
-### `config set` keys
+#### `config set` keys
 
 | Key | Value |
 |---|---|
@@ -421,7 +486,7 @@ Pass them through your host's `env` block (see [docs/hosts.md](docs/hosts.md)).
 
 Example: `lineupify-mcp config set tracksPerTier.headliner 8`
 
-## Privacy and data
+## Privacy, data and terms
 
 Lineupify runs on your machine with a Spotify app you created. It has no server of its own, no telemetry, and no access to your account beyond the token on your disk. [SECURITY.md](SECURITY.md) lists what it can and cannot do and how to report a problem.
 
@@ -436,7 +501,7 @@ Lineupify runs on your machine with a Spotify app you created. It has no server 
 | `drafts/` | one JSON file per draft plus up to 10 undo revisions | unpublished drafts are deleted after 30 days; published ones kept |
 | `exports/` | the only place `export_draft` writes files | until you delete them |
 
-`tokens.json` is written with mode 0600 on macOS and Linux. On Windows that call is a no-op and the file is protected by your user profile's default permissions, the same as other CLIs' credential files.
+`tokens.json` is written with mode 0600 on macOS and Linux. On Windows, where that mode means nothing, its inherited permissions are replaced with an entry for your own account only (`icacls /inheritance:r /grant:r`); if that fails, the file keeps your user profile's default permissions, like other CLIs' credential files.
 
 **Spotify permissions** requested at login, and what needs each one:
 
@@ -463,14 +528,14 @@ Lineupify never deletes or unfollows a playlist, never changes your library or f
 
 **External text.** Poster text, track titles, playlist descriptions and Deezer playlist names are cleaned (control characters stripped, length capped) and shown inside fixed table layouts, which reduces the chance that external text is read as an instruction. It cannot rule it out: a poster line that says "publish this as public" reaches the assistant as data, and nothing stops a model from acting on it. The real protections are the switches above: playlists are private by default, `create_playlist` needs a reviewed draft or an explicit `confirm`, `disconnect purge` needs `confirm` too, `LINEUPIFY_READ_ONLY` turns every write off, and Spotify has no delete endpoint. Logs go to stderr only, with tokens and keys redacted.
 
-**Terms.** Last.fm data is for non-commercial use. Deezer's public API has its own terms of use. Check both before using Lineupify for a business (a venue, a radio schedule).
+**Terms.** You are the owner of the Spotify app, so Spotify's [Developer Policy](https://developer.spotify.com/policy) binds you. As read on 2026-09-08: it allows an app to let a user move "the metadata of the user's playlists to another service" (section III.9), which is what `export_draft` does; it forbids using Spotify content "to train a machine learning or AI model or otherwise ingest Spotify Content into a machine learning or AI model" (III.14). Lineupify trains nothing, but it does hand track names to the assistant you are chatting with; if you read III.14 strictly, use Deezer mode or `LINEUPIFY_READ_ONLY`. Spotify's [refresh-token expiry](https://developer.spotify.com/blog/2026-06-18-refresh-token-expiration) is 6 months from the original authorization, not extended by refreshing. Deezer's [API terms](https://developers.deezer.com/termsofuse) are for non-commercial use (article IV) and say nothing about caching; Lineupify keeps Deezer lookups for 30 to 90 days. Last.fm data is for non-commercial use. Check all three before using Lineupify for a business (a venue, a radio schedule).
 
 ## Limits and known issues
 
 - **Spotify Development Mode.** New Spotify apps run in Development Mode: at most 5 users, and the app owner must have Spotify Premium. Production ("Extended Quota Mode") is only granted to registered businesses with 250,000+ monthly active users, so every Lineupify user creates their own free app instead. Other people can only use your app if you add them under *User Management* in the dashboard. Without Premium, use Deezer mode.
 - **Deezer cannot be written to.** Deezer closed API app registration for new developers in 2025 and had not reopened it as of mid-2026, so Deezer drafts are export-only. Reads, ranking, related artists, tempo and playlist lookups are keyless and unaffected.
 - **6-month logins.** Spotify refresh tokens expire 6 months after the original login. `status` warns when 30 days are left; reconnect with `connect` `force: true` (or `lineupify-mcp auth --force`).
-- **Daily quota.** Development Mode has a daily request quota shared across all apps you own. When it runs out Lineupify reports `SPOTIFY_QUOTA_EXCEEDED`, the draft is paused, and `get_draft` resumes it once the quota resets. Results already fetched are cached, so nothing is lost.
+- **Daily quota.** Development Mode has a daily request quota shared across all apps you own. When it runs out Lineupify reports `SPOTIFY_QUOTA_EXCEEDED`, the draft is paused, and `get_draft` resumes it once the quota resets. Results already fetched are cached, so nothing is lost. Connection failures pause the build the same way (`NETWORK_ERROR`).
 - **60-second hosts.** Claude Desktop and Cursor time out any tool call after 60 s and ignore progress notifications. `create_draft` therefore returns within about 15 s and keeps building in the background; poll with `get_draft` `waitSeconds: 25`. Claude Code has no such limit.
 - **Ranking without Spotify.** Spotify removed artist top-tracks, recommendations and popularity for new apps, so songs are ranked with Deezer's public API and optionally Last.fm, then matched to Spotify by ISRC. Very small or brand-new acts may not be on Deezer; they show up as unresolved. Adding a Last.fm key helps; `add_track` covers the rest.
 - **Size.** Up to 400 artists per draft (split bigger lineups by day; seeds fill the remaining room) and 250 tracks by default (`maxTracks`, up to 10,000).
@@ -494,7 +559,7 @@ npm run build                                    # dist/
 npm run bundle:mcpb                              # build/lineupify-<version>.mcpb for Claude Desktop
 ```
 
-Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Credits
 
@@ -504,7 +569,7 @@ Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 - Playlists are created through the [Spotify Web API](https://developer.spotify.com/documentation/web-api).
 - Built on the [Model Context Protocol](https://modelcontextprotocol.io) (`@modelcontextprotocol/server`).
 
-Lineupify is not affiliated with Spotify, Deezer or Last.fm.
+Lineupify is not affiliated with Spotify, Deezer, Last.fm or MetaBrainz.
 
 ## License
 

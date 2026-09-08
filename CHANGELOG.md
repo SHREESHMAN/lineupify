@@ -2,6 +2,26 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- `edit_draft` `add_track` with `"Artist - Title"` on Spotify checked nothing about the hit and added whatever Spotify ranked first, so a typo added a random song. The hit now has to carry that title and that artist; otherwise `TRACK_NOT_FOUND` points at `search_tracks`.
+- `lineupify-mcp init` and `install --claude-code` did not detect a native `claude.exe` install on Windows (only the `.cmd` shim).
+- An `exclude_artist` sent while the build was fetching that artist could be undone by the build marking it resolved again.
+- The MusicBrainz User-Agent carries the version and a contact URL, as their policy asks.
+
+### Security
+
+- On Windows, `tokens.json` now gets an ACL for your account alone (`icacls /inheritance:r /grant:r`), the equivalent of the 0600 mode used on macOS and Linux. If the step fails the file keeps the profile's default permissions.
+
+### Changed
+
+- The unused `rules` field is no longer written to drafts. Drafts that have it still load.
+- Tests: the Spotify and Deezer clients are exercised against canned responses (error mapping, refresh races, paging, write bodies, Deezer's HTTP-200 error bodies), publishing is tested with a rejected URI and a resumed checkpoint, a second Node process holds the build lock in a test, a 0.2.x draft fixture is checked in, and the tool-surface snapshot records every input schema and annotation instead of key names only.
+- README reorganised: logo, a contents list, a requirements table up front, one paste-in prompt that lets an assistant do the whole install, three install options, screenshot placeholders, and the reference tables under one heading.
+- Terms, checked 2026-09-08: Spotify's Developer Policy allows exporting the metadata of the user's own playlists to another service (III.9) and forbids ingesting Spotify content into an AI model (III.14); the refresh-token lifetime of 6 months is Spotify's announced rule (blog, 2026-06-18); Deezer's API terms are non-commercial and say nothing about caching. The README's Terms section now cites these.
+
 ## 0.4.2 - 2026-09-07
 
 ### Security
