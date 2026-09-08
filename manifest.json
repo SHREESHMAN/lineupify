@@ -10,6 +10,7 @@
     "url": "https://github.com/SHREESHMAN/lineupify"
   },
   "license": "MIT",
+  "icon": "icon.png",
   "keywords": [
     "spotify",
     "playlist",

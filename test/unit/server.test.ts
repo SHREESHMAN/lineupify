@@ -87,9 +87,11 @@ describe('MCP server over stdio', () => {
   it('initializes with the package version', async () => {
     const init = await send('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '0' } });
     expect(init.error).toBeUndefined();
-    const info = init.result?.serverInfo as { name: string; version: string };
+    const info = init.result?.serverInfo as { name: string; version: string; title?: string; icons?: { src: string }[] };
     expect(info.name).toBe('lineupify');
     expect(info.version).toBe(pkg.version);
+    expect(info.title).toBe('Lineupify');
+    expect(info.icons?.[0]?.src).toMatch(/^https:\/\/raw\.githubusercontent\.com\/SHREESHMAN\/lineupify\/.*icon\.png$/);
     await send('notifications/initialized', {}, true);
   }, 30_000);
 

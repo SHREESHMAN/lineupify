@@ -81,7 +81,13 @@ const editOpSchema = z.discriminatedUnion('op', [
 ]);
 
 export function buildServer(): McpServer {
-  const server = new McpServer({ name: 'lineupify', version: VERSION });
+  const server = new McpServer({
+    name: 'lineupify',
+    title: 'Lineupify',
+    version: VERSION,
+    websiteUrl: 'https://github.com/SHREESHMAN/lineupify',
+    icons: [{ src: 'https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/icon.png', mimeType: 'image/png', sizes: ['512x512'] }],
+  });
   const net = { openWorldHint: true };
 
   server.registerTool(

@@ -22,6 +22,8 @@ await fs.mkdir(stage, { recursive: true });
 await fs.cp(path.join(root, 'dist'), path.join(stage, 'dist'), { recursive: true, filter: (p) => !p.endsWith('.map') });
 await fs.cp(path.join(root, 'docs'), path.join(stage, 'docs'), { recursive: true });
 for (const f of ['README.md', 'LICENSE']) await fs.copyFile(path.join(root, f), path.join(stage, f));
+// The icon Claude Desktop shows for the extension (manifest.icon), 512x512 PNG.
+await fs.copyFile(path.join(root, 'assets', 'icon.png'), path.join(stage, 'icon.png'));
 
 manifest.version = pkg.version;
 await fs.writeFile(path.join(stage, 'manifest.json'), JSON.stringify(manifest, null, 2));

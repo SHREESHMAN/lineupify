@@ -7,6 +7,13 @@
     "source": "github"
   },
   "version": "0.4.2",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/icon.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
   "packages": [
     {
       "registryType": "npm",

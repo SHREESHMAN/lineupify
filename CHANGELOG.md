@@ -4,6 +4,10 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 ## Unreleased
 
+### Added
+
+- An icon. The Claude Desktop bundle carries `icon.png` (Claude Desktop showed a plain "L" before), the server announces the same image in its MCP `serverInfo` for hosts that render one, and the MCP Registry entry lists it. Source: `assets/icon.png`, the logo mark at 512×512.
+
 ### Fixed
 
 - `edit_draft` `add_track` with `"Artist - Title"` on Spotify checked nothing about the hit and added whatever Spotify ranked first, so a typo added a random song. The hit now has to carry that title and that artist; otherwise `TRACK_NOT_FOUND` points at `search_tracks`.
