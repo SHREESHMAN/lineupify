@@ -179,7 +179,6 @@ export async function mergePlaylistsTool(args: { playlists: string[]; name?: str
     options,
     artists,
     tracks: draftTracks,
-    rules: [],
     buildNotes: [`merged ${snaps.map((s) => `"${clean(s.name, 30)}" (${s.tracks.length})`).join(', ')}; ${merged.removed} duplicate${merged.removed === 1 ? '' : 's'} removed${merged.tracks.length > cap ? `; cut to ${cap}` : ''}`],
   };
   if (options.order !== 'lineup') applyOrder(draft, options.order);

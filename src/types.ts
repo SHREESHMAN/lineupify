@@ -212,11 +212,6 @@ export interface PlaylistSnapshot {
   tracks: PlaylistTrack[];
 }
 
-export interface DraftRule {
-  op: 'exclude_artist' | 'set_artist_track_count' | 'filter' | 'set_meta';
-  payload: Record<string, unknown>;
-}
-
 export interface Draft {
   id: string;
   name: string;
@@ -235,8 +230,6 @@ export interface Draft {
   options: DraftOptions;
   artists: DraftArtist[];
   tracks: DraftTrack[];
-  /** Rules applied while building (edit_draft ops accepted during a build). */
-  rules: DraftRule[];
   playlistId?: string;
   playlistUrl?: string;
   snapshotId?: string;

@@ -127,7 +127,6 @@ describe('newDraft', () => {
     expect(d.status).toBe('building');
     expect(d.revision).toBe(0);
     expect(d.tracks).toEqual([]);
-    expect(d.rules).toEqual([]);
     expect(d.spotifyUserId).toBe('u1');
     expect(d.public).toBe(false);
     expect(d.createdAt).toBe(d.updatedAt);
@@ -361,7 +360,6 @@ describe('applyEdits', () => {
     expect(a.target).toBe(0);
     expect(r.draft.tracks.some((t) => t.artistKey === 'charli xcx')).toBe(false);
     expect(r.draft.tracks.length).toBe(3);
-    expect(r.draft.rules).toEqual([]);
     expect(r.diff[0]).toContain('excluded Charli XCX');
     await expect(draftMod.applyEdits(readyDraft(), [{ op: 'exclude_artist', artist: 'nobody' }], deps)).rejects.toMatchObject({ code: 'ARTIST_NOT_FOUND' });
   });
@@ -449,7 +447,6 @@ describe('applyEdits', () => {
     expect(r.diff).toEqual([`name: ${'n'.repeat(100)}`, 'description updated', 'public: true']);
     const r2 = await draftMod.applyEdits(readyDraft(), [{ op: 'set_meta', description: 'd'.repeat(400) }], deps);
     expect(r2.draft.description.length).toBe(300);
-    expect(r2.draft.rules).toEqual([]);
   });
 
   it('filter explicit removes explicit tracks; filter versions removes live/remix tracks', async () => {
@@ -521,7 +518,7 @@ describe('applyEdits', () => {
       }
     });
 
-    it('accepts rule ops and records them in draft.rules', async () => {
+    it('accepts the non-positional ops while building', async () => {
       const d = building();
       const r = await draftMod.applyEdits(d, [
         { op: 'exclude_artist', artist: 'kneecap' },
@@ -529,12 +526,6 @@ describe('applyEdits', () => {
         { op: 'set_meta', name: 'Renamed', public: true },
         { op: 'filter', explicit: true, versions: false },
       ], deps);
-      expect(r.draft.rules).toEqual([
-        { op: 'exclude_artist', payload: { key: 'kneecap' } },
-        { op: 'set_artist_track_count', payload: { key: 'charli xcx', count: 4 } },
-        { op: 'set_meta', payload: { op: 'set_meta', name: 'Renamed', public: true } },
-        { op: 'filter', payload: { op: 'filter', explicit: true, versions: false } },
-      ]);
       expect(r.draft.name).toBe('Renamed');
       expect(r.draft.artists.find((a) => a.key === 'kneecap')!.status).toBe('excluded');
       expect(r.rebuildArtists).toEqual(['charli xcx']);

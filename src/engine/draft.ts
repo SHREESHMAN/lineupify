@@ -72,7 +72,6 @@ export function newDraft(params: { name: string; artists: LineupArtist[]; option
     options: params.options,
     artists,
     tracks: [],
-    rules: [],
     seeds: params.seeds?.length ? params.seeds.map((s, i) => ({ ...s, id: makeSeedId(s, i), status: 'pending' as const })) : undefined,
     excludeTracks: params.options.excludeTracksFrom?.length ? { uris: [], isrcs: [], songKeys: [], resolved: false } : undefined,
   };
@@ -300,7 +299,6 @@ export async function applyEdits(draft: Draft, ops: EditOp[], deps: EditDeps): P
         for (const t of draft.tracks) if (t.artistKey === a.key) removeSet.add(t.id);
         a.status = 'excluded';
         a.target = 0;
-        if (building) draft.rules.push({ op: 'exclude_artist', payload: { key: a.key } });
         diff.push(`excluded ${a.name} (${draft.tracks.filter((t) => t.artistKey === a.key).length} of ${before} tracks)`);
         break;
       }
@@ -319,7 +317,6 @@ export async function applyEdits(draft: Draft, ops: EditOp[], deps: EditDeps): P
           rebuild.add(a.key);
           diff.push(`${a.name}: ${have.length} -> ${count} tracks (fetching more)`);
         } else diff.push(`${a.name}: already ${count} tracks`);
-        if (building) draft.rules.push({ op: 'set_artist_track_count', payload: { key: a.key, count } });
         break;
       }
       case 'set_artist_source': {
@@ -370,7 +367,6 @@ export async function applyEdits(draft: Draft, ops: EditOp[], deps: EditDeps): P
           draft.public = op.public;
           diff.push(`public: ${op.public}`);
         }
-        if (building) draft.rules.push({ op: 'set_meta', payload: { ...op } });
         break;
       }
       case 'filter': {
@@ -390,7 +386,6 @@ export async function applyEdits(draft: Draft, ops: EditOp[], deps: EditDeps): P
             diff.push(`versions filter on: removed ${n} live/remix/edit tracks`);
           } else diff.push('versions allowed (existing tracks unchanged)');
         }
-        if (building) draft.rules.push({ op: 'filter', payload: { ...op } });
         break;
       }
     }

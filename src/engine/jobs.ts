@@ -450,7 +450,11 @@ function accepts(pass: Pass, c: Candidate): boolean {
   return true;
 }
 
+/** An edit_draft exclude_artist can land while this artist is mid-fetch; read the status fresh, never from a narrowed copy. */
+const excluded = (a: DraftArtist): boolean => a.status === 'excluded';
+
 async function processArtist(draft: Draft, a: DraftArtist, pass: Pass, rctx: ResolveContext, mctx: { userId: string; signal: AbortSignal; wantBpm?: boolean; provider?: Provider }, seen: Seen): Promise<void> {
+  if (excluded(a)) return;
   const have = () => draft.tracks.filter((t) => t.artistKey === a.key).length;
   let candidates = seen.candidates.get(a.key);
   if (!candidates && a.pinned?.length) {
@@ -467,6 +471,7 @@ async function processArtist(draft: Draft, a: DraftArtist, pass: Pass, rctx: Res
       return;
     }
     const r = await resolveArtist(a.name, rctx);
+    if (excluded(a)) return;
     if (!r.resolved) {
       a.status = 'unresolved';
       a.reason = r.reason;
