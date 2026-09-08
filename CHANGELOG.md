@@ -2,6 +2,12 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- The exhaustive tool, `edit_draft` op, seed, `create_draft` option, CLI and `config.json` tables moved out of the README into [docs/reference.md](docs/reference.md). The README kept ballooning as every release added a row; the back half was one long reference dump nobody read start to finish. The README now has a 5-tool summary and a link; the maintainer docs (`CLAUDE.md`, the `add-feature` and `release` skills, `CONTRIBUTING.md`) point at `docs/reference.md` for future tool/option changes.
+
 ## 0.5.1 - 2026-09-09
 
 ### Fixed

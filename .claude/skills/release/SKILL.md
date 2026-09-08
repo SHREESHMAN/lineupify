@@ -12,7 +12,7 @@ Releases are tag-driven. npm publishing uses npm Trusted Publishing (OIDC) from 
 1. Working tree clean, on `main`, up to date with `origin/main`.
 2. `npm run typecheck && npm run lint && npm test` green locally.
 3. `CHANGELOG.md` has a section for the new version with a date (change `Unreleased` to today's date). Keep the Keep-a-Changelog structure: Added / Changed / Fixed.
-4. If tools, options or error codes changed: README tables, `docs/troubleshooting.md` and the tool-surface snapshot (`npx vitest run test/unit/server.test.ts -u`, review the diff) are updated.
+4. If tools, options or error codes changed: `docs/reference.md` tables, `docs/troubleshooting.md` and the tool-surface snapshot (`npx vitest run test/unit/server.test.ts -u`, review the diff) are updated.
 
 ## Steps
 

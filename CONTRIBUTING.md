@@ -39,7 +39,7 @@ To run the server from source inside a host, register `node <repo>/dist/index.js
 1. Types in `src/types.ts`.
 2. Logic in `src/engine/` (seeds in `seeds.ts`, filters in `filters.ts`).
 3. Wire it in `src/tools/` and register the schema in `src/server.ts` with a description a model can act on.
-4. Tests, then the README tables, `docs/troubleshooting.md` for any new error code, and a line in `CHANGELOG.md` under *Unreleased*.
+4. Tests, then the tables in `docs/reference.md`, `docs/troubleshooting.md` for any new error code, and a line in `CHANGELOG.md` under *Unreleased*.
 
 ## Releasing (maintainers)
 

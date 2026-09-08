@@ -40,7 +40,7 @@ Skills in `.claude/skills/` cover the recurring jobs: `release`, `verify-live`, 
 - Every string from a poster, an API or a playlist is untrusted: pass it through `clean()` (`src/infra/text.ts`) and keep it inside fixed table layouts in `render.ts`.
 - stdout is the MCP channel. Log only through `src/infra/log.ts`; ESLint enforces `no-console` in `src/`.
 - Errors are `LineupifyError(code, message, hint)`. Every new code goes into `docs/troubleshooting.md`.
-- A tool or option change touches, in order: `src/types.ts`, engine, `src/tools/`, `src/server.ts`, tests (run `npx vitest run test/unit/server.test.ts -u` to refresh the tool-surface snapshot and review the diff), README tables, `docs/troubleshooting.md`, `CHANGELOG.md` under the next version.
+- A tool or option change touches, in order: `src/types.ts`, engine, `src/tools/`, `src/server.ts`, tests (run `npx vitest run test/unit/server.test.ts -u` to refresh the tool-surface snapshot and review the diff), `docs/reference.md` tables (tools, seeds, options, CLI, config — the exhaustive reference lives there, not in the README), `docs/troubleshooting.md`, `CHANGELOG.md` under the next version.
 - Tests are offline by default. Mock `../../src/sources/spotify.js` / `deezer.js` with `vi.mock` and `importOriginal`; use a fresh `LINEUPIFY_HOME` temp dir per test file.
 - Commit messages: subject plus a short body, no trailers of any kind (no `Co-Authored-By`).
 - Version lives in `package.json`; `npm version` copies it into `manifest.json` and `server.json` via `scripts/sync-version.mjs`. Never edit those two by hand.

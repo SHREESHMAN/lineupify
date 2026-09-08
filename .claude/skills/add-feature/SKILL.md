@@ -1,6 +1,6 @@
 ---
 name: add-feature
-description: Add or change a Lineupify tool, seed type, build option, filter, provider behaviour or error code, touching every layer that must stay in sync (types, engine, tools, server schema, tests and snapshot, README, troubleshooting, changelog). Use when implementing any user-facing change.
+description: Add or change a Lineupify tool, seed type, build option, filter, provider behaviour or error code, touching every layer that must stay in sync (types, engine, tools, server schema, tests and snapshot, docs/reference.md, troubleshooting, changelog). Use when implementing any user-facing change.
 ---
 
 # Add or change a feature
@@ -16,7 +16,7 @@ Everything user-facing flows through the same layers. Skipping one leaves the mo
 5. **Register** in `src/server.ts` with a zod schema and a description written for the model: what it does, when to use it, defaults, and the next step. Shared option schemas live in `buildOptionSchemas`.
 6. **Provider awareness**: if the change touches tracks or accounts, decide what happens for `provider: 'deezer'` (no Spotify calls; refuse with `PROVIDER_NEEDS_SPOTIFY` or `PROVIDER_NO_PUBLISH`).
 7. **Tests** in `test/unit`: pure logic gets its own file; flows go in `jobs-flow.test.ts` with the module-boundary mocks. Then refresh the tool-surface snapshot and read the diff: `npx vitest run test/unit/server.test.ts -u`. The snapshot lists every tool and its input keys; an unexpected change here is a breaking change for users' saved prompts.
-8. **Docs**: README (tools table, options table, seeds table, limits if a constraint applies), `docs/troubleshooting.md` for every new error code, `docs/hosts.md` / `docs/setup-spotify.md` if setup changes, `CHANGELOG.md` under the next version (Added / Changed / Fixed).
+8. **Docs**: `docs/reference.md` (tools table, options table, seeds table — the README only points here and keeps a 5-tool summary), README's *Limits and known issues* if a user-facing constraint applies, `docs/troubleshooting.md` for every new error code, `docs/hosts.md` / `docs/setup-spotify.md` if setup changes, `CHANGELOG.md` under the next version (Added / Changed / Fixed).
 9. `npm run typecheck && npm run lint && npm test`, then `npm run build` so the locally registered server picks it up after a host restart.
 
 ## Patterns to reuse
