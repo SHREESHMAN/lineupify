@@ -211,7 +211,17 @@ export async function lookupTrack(input: string, signal?: AbortSignal, provider:
   const id = uriMatch?.[1] ?? urlMatch?.[1];
   if (id) return spotify.track(id, signal);
   const dash = s.match(/^(.+?)\s+[-–—]\s+(.+)$/);
-  const q = dash ? `track:${dash[2]!.replace(/[^\p{L}\p{N}\s]/gu, ' ')} artist:${dash[1]!.replace(/[^\p{L}\p{N}\s]/gu, ' ')}` : s;
-  const hits = await spotify.searchTracks(q, 5, signal);
+  if (dash) {
+    // "Artist - Title": the hit must actually carry that title and that artist, or a
+    // typo would add whatever Spotify ranked first.
+    const artist = dash[1]!;
+    const title = dash[2]!;
+    const strip = (x: string) => x.replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+    const hits = await spotify.searchTracks(`track:${strip(title)} artist:${strip(artist)}`, 10, signal);
+    const want = { title, titleShort: title } as Candidate;
+    const matching = hits.filter((h) => titleMatches(h.name, want) && artistMatches(h, artist, false));
+    return matching.find((h) => h.isPlayable) ?? matching[0];
+  }
+  const hits = await spotify.searchTracks(s, 5, signal);
   return hits.find((h) => h.isPlayable) ?? hits[0];
 }
