@@ -9,10 +9,12 @@
  */
 import { http } from '../infra/http.js';
 import { normalizeIsrc } from '../engine/normalize.js';
+import { VERSION } from '../infra/version.js';
 
 const MB = 'https://musicbrainz.org/ws/2';
 const LB = 'https://labs.api.listenbrainz.org';
-const USER_AGENT = 'lineupify-mcp (https://github.com/SHREESHMAN/lineupify)';
+/** MusicBrainz asks for "application/version ( contact )" so they can reach a misbehaving client. */
+export const USER_AGENT = `lineupify-mcp/${VERSION} ( https://github.com/SHREESHMAN/lineupify/issues )`;
 export const LB_ALGORITHM = 'session_based_days_7500_session_300_contribution_5_threshold_15_limit_50_skip_30';
 /** The algorithm bakes in limit_50: at most 50 similar recordings per seed. */
 export const LB_MAX_PER_SEED = 50;

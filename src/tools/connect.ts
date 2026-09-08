@@ -1,5 +1,4 @@
 /** status, setup, connect */
-import { createRequire } from 'node:module';
 import { LineupifyError } from '../types.js';
 import { DEFAULT_REDIRECT_PORT, loadConfig, resolveSettings, saveConfig } from '../infra/config.js';
 import { promises as fs } from 'node:fs';
@@ -66,8 +65,8 @@ export async function foreignEntries(home: string): Promise<string[]> {
   return entries.filter((e) => !KNOWN_ENTRY.test(e)).sort();
 }
 
-const require = createRequire(import.meta.url);
-export const VERSION: string = (require('../../package.json') as { version: string }).version;
+import { VERSION } from '../infra/version.js';
+export { VERSION };
 
 let latestChecked: { at: number; version?: string } | undefined;
 export function updateCheckDisabled(): boolean {

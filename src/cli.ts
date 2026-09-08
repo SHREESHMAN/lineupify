@@ -280,7 +280,7 @@ async function detectHosts(): Promise<Host[]> {
   const found: Host[] = [];
   const exists = (p: string) => fs.stat(p).then(() => true, () => false);
   if (await exists(path.dirname(claudeDesktopConfigPath()))) found.push('claude-desktop');
-  const claude = spawnSync(process.platform === 'win32' ? 'claude.cmd' : 'claude', ['--version'], { stdio: 'ignore', shell: process.platform === 'win32' });
+  const claude = spawnSync('claude', ['--version'], { stdio: 'ignore', shell: process.platform === 'win32' });
   if (claude.status === 0) found.push('claude-code');
   if (await exists(path.join(os.homedir(), '.cursor'))) found.push('cursor');
   return found;
@@ -305,7 +305,7 @@ ${configSnippets()}` };
   const { command, args: a } = serverCommand();
   const q = (x: string) => (/\s/.test(x) ? `"${x}"` : x);
   const cmdArgs = ['mcp', 'add', '--transport', 'stdio', '--scope', 'user', 'lineupify', '--', q(command), ...a.map(q)];
-  const r = spawnSync(process.platform === 'win32' ? 'claude.cmd' : 'claude', cmdArgs, { stdio: 'inherit', shell: process.platform === 'win32' });
+  const r = spawnSync('claude', cmdArgs, { stdio: 'inherit', shell: process.platform === 'win32' });
   if (r.status === 0) return { ok: true, message: 'Added to Claude Code (user scope).' };
   return { ok: false, message: `Could not run the claude CLI. Run this yourself:\n  claude ${cmdArgs.join(' ')}` };
 }
