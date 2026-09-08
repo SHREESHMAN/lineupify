@@ -68,6 +68,27 @@ describe('writeJsonAtomic / readJson', () => {
   });
 });
 
+describe('private files', () => {
+  it.runIf(process.platform === 'win32')('a 0600 write on Windows leaves an ACL for the owner alone', async () => {
+    const { spawnSync } = await import('node:child_process');
+    const file = path.join(dir, 'tokens.json');
+    await writeJsonAtomic(file, { secret: true }, 0o600);
+    const acl = spawnSync('icacls', [file], { encoding: 'utf8' }).stdout;
+    expect(acl).toContain(os.userInfo().username);
+    expect(acl).not.toMatch(/BUILTIN\\Administrators|NT AUTHORITY\\SYSTEM|BUILTIN\\Users/);
+    // Still readable and replaceable by the owner.
+    expect(await readJson(file)).toEqual({ secret: true });
+    await writeJsonAtomic(file, { secret: 2 }, 0o600);
+    expect(await readJson(file)).toEqual({ secret: 2 });
+  });
+
+  it.runIf(process.platform !== 'win32')('a 0600 write keeps the mode on POSIX', async () => {
+    const file = path.join(dir, 'tokens.json');
+    await writeJsonAtomic(file, { secret: true }, 0o600);
+    expect((await fs.stat(file)).mode & 0o777).toBe(0o600);
+  });
+});
+
 describe('fileMtimeMs / lockAge', () => {
   it('report undefined for missing files and a small age for fresh ones', async () => {
     const file = path.join(dir, 'f');

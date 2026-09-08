@@ -3,6 +3,7 @@
  * Every write goes through writeJsonAtomic so a killed process never leaves
  * a half-written file behind. A corrupt file reads back as `undefined`.
  */
+import { spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -60,6 +61,26 @@ export async function writeJsonAtomic(file: string, value: unknown, mode?: numbe
     });
   }
   if (mode !== undefined) await fs.chmod(file, mode).catch(() => undefined);
+  // chmod is a no-op on Windows; a private file (0600) gets an ACL for the owner alone instead.
+  if (mode !== undefined && (mode & 0o077) === 0) restrictToOwner(file);
+}
+
+/**
+ * Windows equivalent of mode 0600: drop the inherited ACL and grant only the
+ * current user. Best effort; returns false (and logs) when icacls is missing
+ * or refuses, in which case the file keeps the profile's default permissions.
+ */
+export function restrictToOwner(file: string): boolean {
+  if (process.platform !== 'win32') return false;
+  try {
+    const user = os.userInfo().username;
+    const r = spawnSync('icacls', [file, '/inheritance:r', '/grant:r', `${user}:F`], { stdio: 'ignore', windowsHide: true, timeout: 10_000 });
+    if (r.status === 0) return true;
+    log.debug(`icacls could not restrict ${file} (status ${r.status ?? r.error?.message})`);
+  } catch (err) {
+    log.debug(`icacls failed for ${file}`, String(err));
+  }
+  return false;
 }
 
 export async function fileMtimeMs(file: string): Promise<number | undefined> {
