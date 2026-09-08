@@ -74,14 +74,26 @@ export function restrictToOwner(file: string): boolean {
   if (process.platform !== 'win32') return false;
   try {
     const user = os.userInfo().username;
-    const r = spawnSync('icacls', [file, '/inheritance:r', '/grant:r', `${user}:F`], { stdio: 'ignore', windowsHide: true, timeout: 10_000 });
+    // Drop inherited entries, then any explicit entries for the built-in groups a
+    // profile folder may carry (Administrators, SYSTEM, Users, Everyone, Authenticated
+    // Users, by well-known SID so the names' language does not matter), then grant
+    // the owner alone.
+    const args = [file, '/inheritance:r'];
+    for (const sid of ['*S-1-5-32-544', '*S-1-5-18', '*S-1-5-32-545', '*S-1-1-0', '*S-1-5-11']) args.push('/remove:g', sid);
+    args.push('/grant:r', `${user}:F`);
+    const r = spawnSync('icacls', args, { stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true, timeout: 10_000, encoding: 'utf8' });
     if (r.status === 0) return true;
-    log.debug(`icacls could not restrict ${file} (status ${r.status ?? r.error?.message})`);
+    lastRestrictError = `status ${r.status ?? r.error?.message}: ${String(r.stderr ?? '').trim()}`;
+    log.debug(`icacls could not restrict ${file} (${lastRestrictError})`);
   } catch (err) {
-    log.debug(`icacls failed for ${file}`, String(err));
+    lastRestrictError = String(err);
+    log.debug(`icacls failed for ${file}`, lastRestrictError);
   }
   return false;
 }
+
+/** Why the last restrictToOwner call failed, for diagnostics and tests. */
+export let lastRestrictError: string | undefined;
 
 export async function fileMtimeMs(file: string): Promise<number | undefined> {
   try {

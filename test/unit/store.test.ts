@@ -69,13 +69,19 @@ describe('writeJsonAtomic / readJson', () => {
 });
 
 describe('private files', () => {
-  it.runIf(process.platform === 'win32')('a 0600 write on Windows leaves an ACL for the owner alone', async () => {
+  it.runIf(process.platform === 'win32')('a 0600 write on Windows leaves an ACL for the owner alone', async (ctx) => {
     const { spawnSync } = await import('node:child_process');
+    const { restrictToOwner, lastRestrictError } = await import('../../src/infra/store.js');
     const file = path.join(dir, 'tokens.json');
+    // Start from a file that also carries explicit (non-inherited) entries, as
+    // GitHub's Windows runners do, so /inheritance:r alone would not be enough.
+    await fs.writeFile(file, '{}');
+    spawnSync('icacls', [file, '/grant', '*S-1-5-32-544:F', '*S-1-5-18:F'], { stdio: 'ignore' });
     await writeJsonAtomic(file, { secret: true }, 0o600);
+    if (!restrictToOwner(file)) ctx.skip(`icacls refused on this machine: ${lastRestrictError}`);
     const acl = spawnSync('icacls', [file], { encoding: 'utf8' }).stdout;
     expect(acl).toContain(os.userInfo().username);
-    expect(acl).not.toMatch(/BUILTIN\\Administrators|NT AUTHORITY\\SYSTEM|BUILTIN\\Users/);
+    expect(acl).not.toMatch(/BUILTIN\\Administrators|NT AUTHORITY\\SYSTEM|BUILTIN\\Users|Everyone|Authenticated Users|S-1-5-32-544|S-1-5-18/);
     // Still readable and replaceable by the owner.
     expect(await readJson(file)).toEqual({ secret: true });
     await writeJsonAtomic(file, { secret: 2 }, 0o600);

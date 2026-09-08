@@ -2,6 +2,12 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Fixed
+
+- The Windows owner-only ACL for `tokens.json` also removes explicit (non-inherited) entries for Administrators, SYSTEM, Users, Everyone and Authenticated Users, by well-known SID. Profile folders on some machines (GitHub's Windows runners among them) carry those as explicit entries, which `/inheritance:r` alone left in place; 0.5.0 silently kept them there. The test now starts from such a file and skips with the icacls message when icacls itself refuses.
+
 ## 0.5.0 - 2026-09-09
 
 ### Added
