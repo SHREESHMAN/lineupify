@@ -19,7 +19,7 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 - The unused `rules` field is no longer written to drafts. Drafts that have it still load.
 - Tests: the Spotify and Deezer clients are exercised against canned responses (error mapping, refresh races, paging, write bodies, Deezer's HTTP-200 error bodies), publishing is tested with a rejected URI and a resumed checkpoint, a second Node process holds the build lock in a test, a 0.2.x draft fixture is checked in, and the tool-surface snapshot records every input schema and annotation instead of key names only.
-- README reorganised: logo, a contents list, a requirements table up front, one paste-in prompt that lets an assistant do the whole install, three install options, screenshot placeholders, and the reference tables under one heading.
+- README reorganised: logo, a contents list, a requirements table up front, one paste-in prompt that lets an assistant do the whole install, three install options, screenshots (a Claude Code session and the finished playlist inline; the Spotify dashboard, `init`, Claude Desktop and TuneMyMusic screens in collapsed sections), and the reference tables under one heading. Images live in `assets/`, which is not part of the npm package.
 - Terms, checked 2026-09-08: Spotify's Developer Policy allows exporting the metadata of the user's own playlists to another service (III.9) and forbids ingesting Spotify content into an AI model (III.14); the refresh-token lifetime of 6 months is Spotify's announced rule (blog, 2026-06-18); Deezer's API terms are non-commercial and say nothing about caching. The README's Terms section now cites these.
 
 ## 0.4.2 - 2026-09-07

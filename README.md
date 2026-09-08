@@ -62,7 +62,10 @@ Streaming apps are good at playing music and bad at letting you say what you wan
 
 Lineupify answers each of these with a draft you can see, a reason for every track, and a playlist that ends up in your own account.
 
-> 📷 *Screenshot placeholder: a Claude Desktop chat showing "Make me a playlist for this lineup" with a poster attached, and the draft summary that comes back.*
+<p align="center">
+  <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/claude-code-lineup.png" width="860" alt="A Claude Code session: a festival poster is attached, Lineupify builds a 92-track draft and publishes it, and the assistant reports the four acts it could not match">
+  <br><sub>One sentence and a poster photo in Claude Code: 92 tracks, published private, with the four unmatched acts named instead of silently dropped.</sub>
+</p>
 
 ## Quick start
 
@@ -82,9 +85,17 @@ If Lineupify is already registered but Spotify is not connected (the one-click r
 
 1. **Create a Spotify app** (2 minutes; skip for Deezer mode). Go to https://developer.spotify.com/dashboard, click *Create app*, tick *Web API*, set the Redirect URI to exactly `http://127.0.0.1:8765/callback`, save, then copy the **Client ID** from the app's Settings page. No client secret is needed. Full walkthrough with every field: [docs/setup-spotify.md](docs/setup-spotify.md).
 
-   > 📷 *Screenshot placeholder: the Spotify dashboard "Create app" form with Web API ticked and the Redirect URI filled in.*
-
-   > 📷 *Screenshot placeholder: the app's Settings page with the Client ID highlighted (and the client secret left alone).*
+   <details>
+   <summary>Screenshots: where "Create app" and the Client ID are</summary>
+   <p align="center">
+     <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/spotify-create-app.png" width="640" alt="The Spotify for Developers dashboard with the Create app button circled">
+     <br><sub>The dashboard. "Create app" is top right.</sub>
+   </p>
+   <p align="center">
+     <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/spotify-client-id.png" width="640" alt="The app's Basic Information card: Client ID with a copy button, App Status Development mode, Refresh Token Lifetime 180 days, and a View client secret link">
+     <br><sub>After saving: the Client ID is the value to copy. The client secret is never needed. The 180-day refresh-token lifetime shown here is why <code>status</code> asks you to reconnect twice a year.</sub>
+   </p>
+   </details>
 
 2. **Run the guided setup**:
 
@@ -94,7 +105,13 @@ If Lineupify is already registered but Spotify is not connected (the one-click r
 
    It takes the Client ID, logs you in through your browser, adds Lineupify to Claude Desktop, Claude Code or Cursor (whichever it finds), and runs a health check. Every step can be skipped. Restart your host afterwards.
 
-   > 📷 *Screenshot placeholder: terminal output of `init` ending in the doctor table with every line OK.*
+   <details>
+   <summary>Screenshot: what <code>init</code> looks like</summary>
+   <p align="center">
+     <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/init-setup.png" width="860" alt="Terminal output of npx -y lineupify-mcp init: the saved Client ID is kept, the Spotify login is already connected, Claude Code and Cursor are detected and Cursor is chosen, and the health check prints OK on every line">
+     <br><sub>A second run on a machine that is already set up: every step is skippable, and the health check at the end is the same one <code>doctor</code> prints.</sub>
+   </p>
+   </details>
 
 3. **Ask for a playlist.** Any of these work:
    - "Make me a playlist for this lineup" *(paste the poster text or attach the image)*
@@ -108,7 +125,21 @@ If Lineupify is already registered but Spotify is not connected (the one-click r
 
 Download `lineupify-<version>.mcpb` from the [releases page](https://github.com/SHREESHMAN/lineupify/releases) and double-click it (or drag it onto Claude Desktop). Paste your Client ID into the form, or leave it empty for Deezer mode. Node.js 20 or newer must still be installed. Then say "connect Lineupify to Spotify" in a chat.
 
-> 📷 *Screenshot placeholder: the Claude Desktop install dialog for the .mcpb bundle with the Client ID field.*
+<details>
+<summary>Screenshots: the three Claude Desktop screens you will see</summary>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/claude-desktop-extensions.png" width="640" alt="Claude Desktop Settings, Extensions tab: No extensions installed, Drag .MCPB or .DXT files here to install">
+  <br><sub>Settings → Extensions. Drop the <code>.mcpb</code> file here.</sub>
+</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/mcpb-install-dialog.png" width="640" alt="The install dialog for the Lineupify bundle, with Claude Desktop's standard warning that the extension is not verified by Anthropic, the version, MIT license and documentation links, and an Install button">
+  <br><sub>The install dialog. The red warning is Claude Desktop's standard notice for every third-party extension; the code is on GitHub and the package on npm carries a provenance attestation.</sub>
+</p>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/claude-desktop-lineupify-settings.png" width="640" alt="The Lineupify extension page in Claude Desktop: Spotify Client ID field (leave empty for Deezer mode), optional Last.fm key, and per-tool permissions with read-only tools grouped">
+  <br><sub>After installing: the Client ID field (empty means Deezer mode), the optional Last.fm key, and per-tool permissions. Read-only tools are grouped so you can approve them once.</sub>
+</p>
+</details>
 
 Other hosts, the config-file route, and running two hosts at once: [docs/hosts.md](docs/hosts.md).
 
@@ -126,7 +157,13 @@ What works in Deezer mode: every seed except your own Spotify taste, every filte
 
 Both tools have free tiers that cover a normal playlist.
 
-> 📷 *Screenshot placeholder: the exported links pasted into TuneMyMusic's "Upload text" box.*
+<details>
+<summary>Screenshot: the pasted links in TuneMyMusic</summary>
+<p align="center">
+  <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/tunemymusic-import.png" width="420" alt="TuneMyMusic step 2 of 4: a playlist of 30 pasted track links, all selected, ready to move to a destination service">
+  <br><sub>The <code>links</code> export pasted in: TuneMyMusic recognises every line as a track and lets you pick the destination.</sub>
+</p>
+</details>
 
 ### Spotify without Premium: borrow a friend's app
 
@@ -184,7 +221,10 @@ URL: https://open.spotify.com/playlist/3cEYpjA9oz9GiPac4AsH4n
 
 Later edits go through `edit_draft` followed by `update_playlist`, which replaces the playlist contents in place.
 
-> 📷 *Screenshot placeholder: the finished playlist open in Spotify, named "Sunfall 2026 · Lineupify".*
+<p align="center">
+  <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/screenshots/spotify-playlist-result.png" width="760" alt="A published playlist in Spotify named Metal · Lineupify: 78 songs, about 6 hours, described as classic to modern metal">
+  <br><sub>What lands in Spotify: the name follows your <code>namingTemplate</code>, the description is yours or the default, and the tracks are the draft you reviewed.</sub>
+</p>
 
 ### A mood
 
