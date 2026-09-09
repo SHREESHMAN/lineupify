@@ -2,6 +2,18 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- **`set_playlist_image`**: set the cover of a published playlist from a JPEG on your machine. The file has to exist locally and `imagePath` has to be the full path to it — Spotify has no way to fetch an image from a URL, and an image pasted into a chat is not a file until you save it, so the tool description and the error tell the assistant to ask you to save it first. JPEG only (the file's contents are checked, so a renamed `.png` is refused) and about 190 KB or smaller, because Spotify's 256 KB cap applies to the base64 payload rather than the file. Verified against the live API first: Development Mode apps *are* granted `ugc-image-upload`, and `PUT /playlists/{id}/images` answers 202.
+- A warning when Spotify matching has quietly degraded. Tracks normally match by ISRC, the exact recording, and fall back to text search only occasionally; a draft where every automatic match fell back now says so in the summary instead of looking like a normal result. This is the signal that was missing when Deezer's search broke in 0.5.2: the numbers were printed, but nothing said they were abnormal, so a playlist full of possibly-wrong versions read as success.
+
+### Changed
+
+- **New permission.** Because of `set_playlist_image`, the login now asks for `ugc-image-upload`. Existing logins keep working for everything else; `status` and `doctor` will say a permission is missing until you reconnect with `connect` `force: true` (or `lineupify-mcp auth --force`). Nothing but `set_playlist_image` uses it.
+- `tracksPerTier` no longer produces a silently wrong count. An artist passed without a tier becomes `undercard` as soon as any other artist has one, so "6 for the headliners, 3 for everyone else" written as `{ headliner: 6, sub: 3 }` used to leave those artists on the built-in undercard default of 2. When `sub` is given and `undercard` is not, `undercard` now follows `sub`.
+
 ## 0.5.2 - 2026-09-09
 
 ### Fixed

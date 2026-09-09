@@ -30,7 +30,7 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 | `JOB_RUNNING` | You tried to `connect` (switch accounts), `disconnect` or `delete_draft` while a draft is building. | Wait for the build (`get_draft` with `waitSeconds: 25`) and retry. |
 | `PURGE_REFUSED` | `disconnect purge: true` / `logout --purge` found files in the data folder that Lineupify did not create (`LINEUPIFY_HOME` points at a shared folder). Nothing was deleted. | Delete `config.json`, `tokens.json`, `cache/`, `drafts/` and `exports/` by hand, or point `LINEUPIFY_HOME` at a folder of its own. |
 | `HOST_CONFIG_INVALID` | `lineupify-mcp install` found the host's config file (`claude_desktop_config.json` or `~/.cursor/mcp.json`) but could not parse it as JSON. Nothing was written. | Fix the file (a trailing comma is the usual cause) and run `install` again, or paste the snippet from `lineupify-mcp doctor` into it by hand. |
-| `READ_ONLY_MODE` | `LINEUPIFY_READ_ONLY` is set, so `create_playlist` and `update_playlist` are disabled. | Remove the variable from the host's MCP config and restart the host, or keep it and use `export_draft`. |
+| `READ_ONLY_MODE` | `LINEUPIFY_READ_ONLY` is set, so `create_playlist`, `update_playlist` and `set_playlist_image` are disabled. | Remove the variable from the host's MCP config and restart the host, or keep it and use `export_draft`. |
 
 ### Spotify API
 
@@ -71,6 +71,9 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 | `BAD_EDIT` | `set_artist_source` without `deezerId` or `spotifyArtistId`. | Pass one of them. |
 | `BAD_QUERY` | `search_tracks` with an empty query. | Pass a query, e.g. `track:Marea artist:Fred again`. |
 | `FILE_EXISTS` | `export_draft` with `save: true` would overwrite an existing file. | Pass `overwrite: true` or rename the draft (`set_meta`). |
+| `IMAGE_NOT_FOUND` | `set_playlist_image` found no readable file at `imagePath`. | The cover has to be a file on the machine running Lineupify. An image pasted into a chat is not one until you save it: save it (for example to Downloads), then pass the full path, e.g. `C:\Users\you\Downloads\cover.jpg`. Relative paths resolve against wherever your MCP host launched the server, so use an absolute path. |
+| `IMAGE_NOT_JPEG` | The file is not a JPEG. Spotify accepts JPEG only, and the check reads the file's contents, so renaming a `.png` to `.jpg` does not work. | Export or re-save the image as JPEG and pass that file. |
+| `IMAGE_TOO_LARGE` | Spotify caps a playlist cover at 256 KB once base64-encoded, so the file itself has to be roughly 190 KB or less. | Save it smaller: 1000×1000 at quality 80 is usually far under the limit. |
 
 ### Reading, comparing and merging playlists
 
@@ -84,7 +87,7 @@ Errors without a code (`ERROR: …`) are unexpected; set `LINEUPIFY_LOG=debug` i
 | `COMPARE_NEEDS_SOURCES` / `COMPARE_TOO_MANY` | `compare_playlists` needs 2-4 sources. | Adjust the list. |
 | `MERGE_NEEDS_PLAYLISTS` / `MERGE_TOO_MANY` | `merge_playlists` needs 1-6 playlists. | Adjust the list. |
 | `MERGE_MIXED_PROVIDERS` | The playlists mix Spotify and Deezer tracks; one playlist holds one kind of track id. | Merge Spotify sources together and Deezer sources together, or rebuild one side on the other provider with `create_draft`. |
-| `PROVIDER_NO_PUBLISH` | `create_playlist` / `update_playlist` on a Deezer draft. Deezer no longer issues API credentials, so writes are impossible. | `export_draft` with `format: "links"` or `"m3u"`, then import with a transfer tool (TuneMyMusic, Soundiiz). Or connect Spotify and rebuild with `provider: "spotify"`. |
+| `PROVIDER_NO_PUBLISH` | `create_playlist` / `update_playlist` / `set_playlist_image` on a Deezer draft. Deezer no longer issues API credentials, so writes are impossible. | `export_draft` with `format: "links"` or `"m3u"`, then import with a transfer tool (TuneMyMusic, Soundiiz). Or connect Spotify and rebuild with `provider: "spotify"`. |
 | `PROVIDER_NEEDS_SPOTIFY` | A Deezer draft was asked for something that reads your Spotify data: the `taste` seed, `me` / `library` / a playlist name / a Spotify link as a seed or exclusion, `discoveryOnly`, or `compare_taste`. | Use Deezer playlist links or draft ids, or connect Spotify. |
 
 ### Publishing

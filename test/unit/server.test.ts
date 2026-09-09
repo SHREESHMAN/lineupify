@@ -98,7 +98,7 @@ describe('MCP server over stdio', () => {
   it('lists every tool with a stable input surface', async () => {
     const list = await send('tools/list', {});
     const tools = (list.result?.tools ?? []) as { name: string; description: string; inputSchema: { type: string; properties?: Record<string, unknown> }; annotations?: Record<string, boolean> }[];
-    expect(tools.length).toBe(21);
+    expect(tools.length).toBe(22);
     for (const t of tools) {
       expect(t.description.length, t.name).toBeGreaterThan(40);
       expect(t.inputSchema.type).toBe('object');

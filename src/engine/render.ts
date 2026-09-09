@@ -13,6 +13,31 @@ export function statusWord(d: Draft): string {
   return d.status;
 }
 
+/**
+ * Pure: a warning when Spotify matching has quietly degraded. Tracks normally
+ * match by ISRC (the exact recording) and fall back to text search only for the
+ * odd candidate. When the fallback takes over completely, a lookup source has
+ * usually broken rather than the music being unusual, and the symptom otherwise
+ * looks like a normal result: text matches can be the wrong version, a live cut
+ * or a re-recording. Deezer drafts match on Deezer and are not covered here.
+ *
+ * Returns an empty string when there is nothing worth saying.
+ */
+export function matchQualityNote(d: Draft): string {
+  if ((d.provider ?? 'spotify') !== 'spotify') return '';
+  const isrc = d.tracks.filter((t) => t.matchedVia === 'isrc').length;
+  const byText = d.tracks.filter((t) => t.matchedVia === 'text').length;
+  const auto = isrc + byText;
+  if (auto < 5) return '';
+  if (isrc === 0) {
+    return `Warning: not one of the ${auto} automatically matched tracks was matched by ISRC; all ${byText} fell back to text search. That is what a broken lookup source looks like, and text matches can be the wrong version of a song. Check get_draft view=tracks, and report it if a fresh draft does the same.`;
+  }
+  if (byText / auto > 0.6) {
+    return `Note: ${byText} of ${auto} matched tracks fell back to text search rather than ISRC, so some may be the wrong version. Usually means the candidates arrived without ISRCs.`;
+  }
+  return '';
+}
+
 export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
   const live = d.artists.filter((a) => a.status !== 'excluded');
   const resolved = live.filter((a) => a.status === 'resolved').length;
@@ -57,6 +82,8 @@ export function summary(d: Draft, opts: { connectedAs?: string } = {}): string {
   lines.push(`Tracks ${d.tracks.length} · ${fmtDuration(totalDurationMs(d))} · explicit ${explicit} · ${via} · sources dz ${bySource.deezer} / lfm ${bySource.lastfm} / sp ${bySource.spotify}${bySource.listenbrainz ? ` / lb ${bySource.listenbrainz}` : ''}${bySource.manual ? ` / manual ${bySource.manual}` : ''}`);
   lines.push(`Tiers ${tierCounts || 'flat'} · order ${d.options.order} · ${d.public ? 'public' : 'private'}${d.options.excludeExplicit ? ' · clean only' : ''}`);
   if (d.playlistId) lines.push(`Published: ${d.playlistUrl ?? d.playlistId}`);
+  const quality = matchQualityNote(d);
+  if (quality) lines.push(quality);
   const report = notFoundReport(d);
   if (report) lines.push(report);
   lines.push(nextHint(d));

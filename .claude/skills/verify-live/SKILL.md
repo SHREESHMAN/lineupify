@@ -51,7 +51,7 @@ Run this from a directory outside the repo so `npx` fetches from the registry ra
 ## 6. Protocol
 
 ```
-npm run build && node test/smoke/mcp-stdio.mjs               # initialize, tools/list (21 tools), status, parse_lineup
+npm run build && node test/smoke/mcp-stdio.mjs               # initialize, tools/list (22 tools), status, parse_lineup
 node test/smoke/mcp-stdio.mjs status                          # any single tool: node test/smoke/mcp-stdio.mjs <tool> '<json args>'
 ```
 

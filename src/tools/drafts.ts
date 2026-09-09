@@ -1,7 +1,7 @@
 /** parse_lineup, create_draft, get_draft, edit_draft, list_drafts, delete_draft, export_draft */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { DraftOptions, DraftTrack, LineupArtist, OrderMode, Provider, SeedSpec, SourceName, Tier } from '../types.js';
+import type { DraftOptions, DraftTrack, LineupArtist, OrderMode, Provider, SeedSpec, SourceName, Tier, TracksPerTier } from '../types.js';
 import { DEFAULT_SEED_LIMIT, MAX_SEED_LIMIT } from '../engine/seeds.js';
 import { parsePlaylistRef } from '../engine/playlists.js';
 import { LineupifyError } from '../types.js';
@@ -139,6 +139,20 @@ function defaultNameFor(seeds: SeedSpec[]): string {
   }
 }
 
+/**
+ * Merge a caller's per-tier counts over the configured defaults, with one rule
+ * that exists to stop a silent wrong answer: an artist given without a tier
+ * becomes `undercard` whenever any other artist has a tier, so "6 for the
+ * headliners, 3 for everyone else" expressed as { headliner: 6, sub: 3 } used to
+ * leave those artists on the built-in undercard default of 2. When the caller
+ * sets `sub` but not `undercard`, `undercard` follows `sub`.
+ */
+export function resolveTracksPerTier(defaults: TracksPerTier, given: Partial<TracksPerTier> | undefined): TracksPerTier {
+  const merged: TracksPerTier = { ...defaults, ...(given ?? {}) };
+  if (given && given.undercard === undefined && given.sub !== undefined) merged.undercard = given.sub;
+  return merged;
+}
+
 function yearRangeOf(r: { from?: number; to?: number } | undefined): { from?: number; to?: number } | undefined {
   if (!r) return undefined;
   const from = r.from !== undefined ? clampInt(r.from, 1900, 2100, 1900) : undefined;
@@ -194,7 +208,7 @@ export async function createDraft(args: CreateDraftArgs) {
   const d = settings.defaults;
   const excludeTracksFrom = (args.excludeTracksFrom ?? []).map((x) => clean(x, 200)).filter(Boolean).slice(0, 8);
   const options: DraftOptions = {
-    tracksPerTier: { ...d.tracksPerTier, ...(args.tracksPerTier ?? {}) },
+    tracksPerTier: resolveTracksPerTier(d.tracksPerTier, args.tracksPerTier),
     tracksPerArtist: args.tracksPerArtist ?? d.tracksPerArtist,
     maxTracks: clampInt(args.maxTracks, 1, 10_000, d.maxTracks),
     maxDurationMin: args.maxDurationMin ?? d.maxDurationMin,

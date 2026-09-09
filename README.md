@@ -332,6 +332,7 @@ Every tool, every `edit_draft` op, every seed, every `create_draft` option, the 
 | `get_draft` | Shows a draft: summary, tracks, artists, or what could not be found. |
 | `edit_draft` | Swap a track, drop an artist, reorder, undo. |
 | `create_playlist` | Publishes a reviewed draft and returns its URL. |
+| `set_playlist_image` | Sets the playlist cover from a JPEG saved on your machine. |
 
 [Full reference →](docs/reference.md)
 
@@ -362,6 +363,7 @@ Lineupify runs on your machine with a Spotify app you created. It has no server 
 | `user-top-read`, `user-follow-read` | `compare_taste`, `discoveryOnly`, `compare_playlists` with `me`, `taste` and `blend` seeds, `refresh_taste` |
 | `playlist-read-private`, `playlist-read-collaborative` | reading your own private playlists, and playlists by name |
 | `user-library-read` | `library` (liked songs) in reads, exclusions and `refresh_taste` |
+| `ugc-image-upload` | `set_playlist_image`, the only tool that uploads anything; it reads the local JPEG file you name and sends it to your playlist |
 
 Lineupify never deletes or unfollows a playlist, never changes your library or follows, and creates playlists private unless you ask for public. The only overwrite is `update_playlist` on a playlist Lineupify created, and it refuses if that playlist changed inside Spotify unless forced.
 

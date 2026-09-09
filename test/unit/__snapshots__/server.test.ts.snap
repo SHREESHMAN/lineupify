@@ -1343,6 +1343,34 @@ exports[`MCP server over stdio > lists every tool with a stable input surface 1`
     },
     "title": "Search tracks",
   },
+  "set_playlist_image": {
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": true,
+      "readOnlyHint": false,
+    },
+    "inputSchema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "properties": {
+        "draftId": {
+          "type": "string",
+        },
+        "imagePath": {
+          "description": "Full path to a .jpg file already saved on this machine, e.g. C:\\Users\\you\\Downloads\\cover.jpg or /home/you/Downloads/cover.jpg",
+          "maxLength": 500,
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "draftId",
+        "imagePath",
+      ],
+      "type": "object",
+    },
+    "title": "Set playlist cover",
+  },
   "setup": {
     "annotations": {
       "destructiveHint": false,

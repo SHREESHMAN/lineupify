@@ -14,7 +14,7 @@ import { pruneDrafts } from './engine/draft.js';
 import { guard } from './tools/shared.js';
 import { connect, disconnect, setup, status, VERSION } from './tools/connect.js';
 import { createDraft, deleteDraftTool, editDraft, exportDraft, getDraftTool, listDraftsTool, parseLineup } from './tools/drafts.js';
-import { compareTasteTool, createPlaylist, searchTracks, updatePlaylist } from './tools/playlist.js';
+import { compareTasteTool, createPlaylist, searchTracks, setPlaylistImage, updatePlaylist } from './tools/playlist.js';
 import { analyzePlaylistTool, comparePlaylistsTool, expandPlaylistTool, mergePlaylistsTool, readPlaylistTool, refreshTasteTool } from './tools/playlists.js';
 
 const TIER = z.enum(['headliner', 'sub', 'undercard', 'flat']);
@@ -354,6 +354,21 @@ export function buildServer(): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, ...net },
     },
     guard(updatePlaylist),
+  );
+
+  server.registerTool(
+    'set_playlist_image',
+    {
+      title: 'Set playlist cover',
+      description:
+        'Replace the cover image of the playlist a draft was published to, using a JPEG file on this machine. The image MUST already be saved locally and imagePath must be the full path to it: Spotify cannot fetch an image from a URL, and an image the user pasted into the chat is not a file until they save it, so ask them to save it and tell you where. JPEG only (a renamed .png is rejected) and roughly 190 KB or smaller. Requires the draft to be published (create_playlist first) and a Spotify login that granted the image-upload permission; if it was granted before this permission existed, status will say to reconnect.',
+      inputSchema: z.object({
+        draftId: z.string(),
+        imagePath: z.string().min(1).max(500).describe('Full path to a .jpg file already saved on this machine, e.g. C:\\Users\\you\\Downloads\\cover.jpg or /home/you/Downloads/cover.jpg'),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, ...net },
+    },
+    guard(setPlaylistImage),
   );
 
   server.registerTool(

@@ -1,4 +1,6 @@
-/** search_tracks, create_playlist, update_playlist, compare_taste */
+/** search_tracks, create_playlist, update_playlist, compare_taste, set_playlist_image */
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import type { Draft, Provider } from '../types.js';
 import { LineupifyError } from '../types.js';
 import { clean, fmtDuration } from '../infra/text.js';
@@ -33,6 +35,63 @@ export function assertPublishable(d: Draft): void {
       'Use export_draft with format "links" (one Deezer link per line) or "m3u" and import the list into Deezer with a free transfer tool such as TuneMyMusic or Soundiiz. To publish to Spotify instead, connect Spotify and create the draft with provider "spotify".',
     );
   }
+}
+
+/**
+ * Pure: check the bytes are a JPEG small enough for Spotify and return the base64
+ * payload. Spotify accepts JPEG only and caps the base64 body, not the file, at
+ * 256 KB, so a file of about 190 KB is the real ceiling.
+ */
+export function jpegCoverPayload(bytes: Buffer, label: string): string {
+  if (bytes.length < 3 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) {
+    throw new LineupifyError(
+      'IMAGE_NOT_JPEG',
+      `${label} is not a JPEG (Spotify accepts JPEG only).`,
+      'Save or export the image as .jpg and pass that file. Most tools do this with "Save as" or "Export as JPEG"; a renamed .png will not work because the file contents are what is checked.',
+    );
+  }
+  const payload = bytes.toString('base64');
+  if (payload.length > spotify.MAX_COVER_BASE64) {
+    throw new LineupifyError(
+      'IMAGE_TOO_LARGE',
+      `${label} is ${Math.round(bytes.length / 1024)} KB, which is over Spotify's limit for a playlist cover.`,
+      'Save it smaller: about 190 KB or less as a JPEG (1000x1000 at quality 80 is usually well under). Then pass the smaller file.',
+    );
+  }
+  return payload;
+}
+
+/**
+ * Set the cover of the playlist a draft was published to, from a JPEG on this
+ * machine. Spotify has no way to fetch an image by URL, so the file has to exist
+ * locally; an image pasted into a chat is not a file until it is saved.
+ */
+export async function setPlaylistImage(args: { draftId: string; imagePath: string }) {
+  ensureWritesAllowed('set_playlist_image');
+  const d = await getDraft(args.draftId);
+  assertPublishable(d);
+  if (!d.playlistId) throw new LineupifyError('NO_PLAYLIST', 'This draft has not been published, so there is no playlist to put a cover on.', 'Call create_playlist first, then set_playlist_image.');
+
+  const file = path.resolve(clean(args.imagePath, 500));
+  let bytes: Buffer;
+  try {
+    bytes = await fs.readFile(file);
+  } catch {
+    throw new LineupifyError(
+      'IMAGE_NOT_FOUND',
+      `No readable file at ${file}.`,
+      'The image must be saved on this machine and the path must point at it. An image pasted into the chat is not a file: save it first (for example to your Downloads folder), then pass the full path, e.g. C:\\Users\\you\\Downloads\\cover.jpg or /home/you/Downloads/cover.jpg.',
+    );
+  }
+  const payload = jpegCoverPayload(bytes, path.basename(file));
+  await spotify.setPlaylistImage(d.playlistId, payload);
+  return text(
+    [
+      `Cover set on "${clean(d.name, 60)}" from ${path.basename(file)} (${Math.round(bytes.length / 1024)} KB).`,
+      `Playlist: ${d.playlistUrl ?? d.playlistId}`,
+      'Spotify can take a few seconds to show it, and clients cache aggressively; reopen the playlist if it still shows the old art.',
+    ].join('\n'),
+  );
 }
 
 export async function createPlaylist(args: { draftId: string; confirm?: boolean; allowPartial?: boolean; mode?: 'new' }) {

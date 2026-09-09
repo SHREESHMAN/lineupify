@@ -19,9 +19,11 @@ export const SPOTIFY_API_SNAPSHOT = '2026-07';
  * user-read-private is needed for market=from_token on search and track lookups.
  * playlist-read-* and user-library-read (added in 0.2.0) let Lineupify read the
  * user's own private playlists and saved tracks; logins from 0.1.0 lack them
- * and `status` asks for a re-login.
+ * and `status` asks for a re-login. ugc-image-upload (0.6.0) is only used by
+ * set_playlist_image; verified live 2026-09-09 that Development Mode apps are
+ * granted it and that PUT /playlists/{id}/images works (202, empty body).
  */
-export const SCOPES = ['playlist-modify-private', 'playlist-modify-public', 'playlist-read-private', 'playlist-read-collaborative', 'user-top-read', 'user-follow-read', 'user-read-private', 'user-library-read'];
+export const SCOPES = ['playlist-modify-private', 'playlist-modify-public', 'playlist-read-private', 'playlist-read-collaborative', 'user-top-read', 'user-follow-read', 'user-read-private', 'user-library-read', 'ugc-image-upload'];
 const API = 'https://api.spotify.com/v1';
 const ACCOUNTS = 'https://accounts.spotify.com';
 export const REFRESH_TOKEN_LIFETIME_DAYS = 182;
@@ -496,6 +498,31 @@ export async function createPlaylist(name: string, description: string, isPublic
 
 export async function changePlaylistDetails(id: string, details: { name?: string; description?: string; public?: boolean }): Promise<void> {
   await api(`/playlists/${id}`, { method: 'PUT', body: details });
+}
+
+/** Spotify's cap on the base64 payload for a playlist cover. */
+export const MAX_COVER_BASE64 = 256 * 1024;
+
+/**
+ * Replace a playlist's cover image. The body is the base64 text of a JPEG (not a
+ * data URI, not raw bytes) and the response is 202 with an empty body, so there
+ * is nothing to parse. Needs the ugc-image-upload scope on top of the modify one.
+ */
+export async function setPlaylistImage(playlistId: string, jpegBase64: string): Promise<void> {
+  const tokens = await getAccessToken();
+  let res;
+  try {
+    res = await request(`${API}/playlists/${playlistId}/images`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${tokens.accessToken}`, 'Content-Type': 'image/jpeg' },
+      body: jpegBase64,
+      limiterKey: 'api.spotify.com',
+    });
+  } catch (err) {
+    if (err instanceof HttpError) throw mapError(err);
+    throw err;
+  }
+  if (res.status >= 400) throw mapError(new HttpError(res.status, `${API}/playlists/${playlistId}/images`, res.text));
 }
 
 export async function addItems(playlistId: string, uris: string[]): Promise<string> {
