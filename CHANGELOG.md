@@ -8,6 +8,14 @@ All notable changes to `lineupify-mcp` are listed here. The format follows [Keep
 
 - The exhaustive tool, `edit_draft` op, seed, `create_draft` option, CLI and `config.json` tables moved out of the README into [docs/reference.md](docs/reference.md). The README kept ballooning as every release added a row; the back half was one long reference dump nobody read start to finish. The README now has a 5-tool summary and a link; the maintainer docs (`CLAUDE.md`, the `add-feature` and `release` skills, `CONTRIBUTING.md`) point at `docs/reference.md` for future tool/option changes.
 
+## Unreleased
+
+### Fixed
+
+- Deezer stopped answering `/search/track` queries that use its `artist:` field: they return zero results and no error (`track:` alone and plain text still work; verified live 2026-09-09). `findTrack()` used that syntax, so it silently found nothing for every song. Three things were broken by it: `similar_songs` candidates from Last.fm and ListenBrainz never got their ISRC, so they fell back to matching Spotify by text instead of by recording; `add_track` with `"Artist - Title"` on a Deezer draft failed outright; and Deezer-provider drafts could not match name-only candidates at all. The query is plain text now, with the same title and artist checks applied to the results.
+- Lookups that failed while the above was broken were cached as misses and would have suppressed the fixed lookup for the rest of their 30-day life. The cache key generation moved from `deezer:q:` to `deezer:q2:`, so those entries are never read again and expire on their own. No action needed on upgrade.
+- `npm run test:live` now exercises `findTrack` against real songs, including the featured-artist case (Leon Bridges → Khruangbin's *Texas Sun*) and a title the artist never recorded. Nothing covered it before, which is how a silent API change reached a release.
+
 ## 0.5.1 - 2026-09-09
 
 ### Fixed

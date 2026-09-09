@@ -3,6 +3,11 @@
  * and an `error` object in the body: code 4 is quota (back off and retry),
  * code 800 is "no data", anything else is a real failure. Nothing carrying an
  * error object is ever cached.
+ *
+ * Search syntax, verified live 2026-09-09: on `/search/track`, any query using
+ * the `artist:` field returns zero results and no error (it used to work, and
+ * broke silently). `track:"..."` alone still works, and plain text works. Use
+ * plain text wherever the artist has to take part in the query.
  */
 import type { Candidate } from '../types.js';
 import { http, sleep } from '../infra/http.js';
@@ -365,10 +370,19 @@ export async function trackById(trackId: number, signal?: AbortSignal): Promise<
   return toProviderTrack({ ...toDetails(body), id: body.id, contributors: body.contributors?.map((c) => c.name), album: body.album?.title });
 }
 
-/** Find a recording by title and artist; exact title, artist match, most popular first. */
+/**
+ * Find a recording by title and artist; exact title, artist match, most popular first.
+ *
+ * The query is plain text, not Deezer's `artist:"x" track:"y"` syntax: as of
+ * 2026-09 any query containing the `artist:` field returns zero results with no
+ * error (verified live; `track:` alone still works). Plain text is an AND over
+ * the terms, so the artist name still constrains the results, and contributors
+ * are indexed, which keeps the featured-artist case working.
+ */
 export async function findTrack(title: string, artist: string, signal?: AbortSignal): Promise<import('../types.js').SpotifyTrack | undefined> {
-  const clean = (s: string) => s.replace(/"/g, '').trim();
-  const q = `artist:"${clean(artist)}" track:"${clean(stripTitleDecorations(title))}"`;
+  const terms = (s: string) => s.replace(/["']/g, ' ').replace(/\s+/g, ' ').trim();
+  const q = `${terms(artist)} ${terms(stripTitleDecorations(title))}`.trim();
+  if (!q) return undefined;
   const body = await get<{ data?: { id: number; title: string; title_short?: string; readable?: boolean; rank?: number; isrc?: string; duration?: number; explicit_lyrics?: boolean; artist?: { name: string }; album?: { title?: string } }[] }>(`/search/track?q=${encodeURIComponent(q)}&limit=10`, signal);
   const want = titleKey(title);
   const titled = (body?.data ?? [])
@@ -376,8 +390,9 @@ export async function findTrack(title: string, artist: string, signal?: AbortSig
     .filter((t) => titleKey(t.title_short || t.title) === want || titleKey(t.title) === want)
     .sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
   const sameArtist = (name: string) => fold(name) === fold(artist) || fold(name).startsWith(fold(artist)) || fold(artist).startsWith(fold(name));
-  // Search results name only the lead artist, so a featured artist ("Leon Bridges - Texas Sun")
-  // never matches by name; the artist filter was in the query, so an exact title hit is accepted.
+  // Deezer names only the lead artist on a search hit, so "Leon Bridges - Texas Sun"
+  // comes back credited to Khruangbin. The artist name was part of the query and had
+  // to match something (a contributor credit), so an exact title hit is accepted.
   const best = titled.find((t) => sameArtist(t.artist!.name)) ?? titled[0];
   if (!best) return undefined;
   return toProviderTrack({ id: best.id, title: best.title, isrc: normalizeIsrc(best.isrc), durationMs: (best.duration ?? 0) * 1000, explicit: best.explicit_lyrics, rank: best.rank, artistName: best.artist?.name, album: best.album?.title });

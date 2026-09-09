@@ -129,8 +129,11 @@ describe('search ranking', () => {
     });
     const t = await deezer.findTrack('Texas Sun', 'Khruangbin');
     expect(t?.id).toBe('2');
+    // Plain text, not `artist:"x" track:"y"`: the artist field returns zero results
+    // from Deezer since 2026-09, so a query carrying it would silently find nothing.
     const q = new URL('https://x' + hits[0]!).searchParams.get('q');
-    expect(q).toBe('artist:"Khruangbin" track:"Texas Sun"');
+    expect(q).toBe('Khruangbin Texas Sun');
+    expect(q).not.toContain('artist:');
     // Featured artist: the name is not on the hit, the exact title still wins over the karaoke clone.
     on('/search/track', { data: [{ id: 5, title: 'Texas Sun', title_short: 'Texas Sun', rank: 700, readable: true, artist: { name: 'Khruangbin' } }, { id: 6, title: 'Texas Sun', title_short: 'Texas Sun', rank: 999, readable: true, artist: { name: 'Karaoke Kings' } }] });
     expect((await deezer.findTrack('Texas Sun', 'Leon Bridges'))?.id).toBe('5');

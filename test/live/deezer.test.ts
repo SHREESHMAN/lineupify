@@ -4,7 +4,7 @@
  * traps and featured-track partitioning.
  */
 import { describe, expect, it } from 'vitest';
-import { pickArtist, searchArtists, artistTopTracks, trackDetails, relatedArtists, chartArtists, searchPlaylists, playlistTracks, trackByIsrc, searchTracksByTitle } from '../../src/sources/deezer.js';
+import { pickArtist, searchArtists, artistTopTracks, trackDetails, relatedArtists, chartArtists, searchPlaylists, playlistTracks, trackByIsrc, searchTracksByTitle, findTrack } from '../../src/sources/deezer.js';
 import { fold } from '../../src/engine/normalize.js';
 
 const CASES: { query: string; expectId: number; minFans: number }[] = [
@@ -63,4 +63,36 @@ describe('live deezer', () => {
     const results = await searchArtists('zzqx nonexistent artist 9182');
     expect(pickArtist('zzqx nonexistent artist 9182', results)).toBeUndefined();
   }, 30_000);
+
+  /**
+   * findTrack is how a name-only candidate (Last.fm, ListenBrainz) gets its ISRC
+   * before being matched to Spotify, and how add_track resolves "Artist - Title"
+   * on a Deezer draft. It silently returned nothing for every song once Deezer
+   * stopped answering queries that use the `artist:` field, so this asserts on
+   * real songs that it resolves and carries an ISRC.
+   */
+  describe('findTrack by title and artist', () => {
+    const SONGS: { title: string; artist: string; expectArtist?: string }[] = [
+      { title: 'Hard Times', artist: 'Paramore' },
+      { title: 'Juno', artist: 'Sabrina Carpenter' },
+      { title: 'Pink Pony Club', artist: 'Chappell Roan' },
+      // Credited to Khruangbin on Deezer; the featured name must still find it.
+      { title: 'Texas Sun', artist: 'Leon Bridges', expectArtist: 'Khruangbin' },
+    ];
+
+    for (const s of SONGS) {
+      it(`resolves ${s.artist} - ${s.title} with an ISRC`, async () => {
+        const hit = await findTrack(s.title, s.artist);
+        expect(hit, `no Deezer track for ${s.artist} - ${s.title}`).toBeTruthy();
+        expect(hit!.isrc, `no ISRC for ${s.artist} - ${s.title}`).toMatch(/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/);
+        expect(fold(hit!.name)).toBe(fold(s.title));
+        expect(hit!.deezerTrackId).toBeGreaterThan(0);
+        if (s.expectArtist) expect(hit!.artists.map((a) => a.name).join(' ')).toContain(s.expectArtist);
+      }, 30_000);
+    }
+
+    it('does not invent a match for a title the artist never recorded', async () => {
+      expect(await findTrack('Enter Sandman', 'Sabrina Carpenter')).toBeUndefined();
+    }, 30_000);
+  });
 });

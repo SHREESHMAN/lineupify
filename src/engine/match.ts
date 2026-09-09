@@ -44,7 +44,7 @@ async function matchOnDeezer(c: Candidate, artistName: string, ctx: MatchContext
     });
     return { track, via: 'deezer' };
   }
-  const key = `deezer:q:${titleKey(c.titleShort || c.title)}|${fold(c.leadArtist || artistName)}`;
+  const key = deezerQueryKey(c.titleShort || c.title, c.leadArtist || artistName);
   const cached = await spotifyTrackCache.get(key);
   if (cached === null) return undefined;
   if (cached) return { track: cached, via: 'deezer' };
@@ -58,12 +58,23 @@ function toCached(t: SpotifyTrack): CachedSpotifyTrack {
 }
 
 /**
+ * Cache key for a Deezer title+artist lookup. The `q2` generation exists because
+ * `q` entries were written while Deezer's `artist:` search field silently returned
+ * nothing: every lookup cached a miss, and those misses would have suppressed the
+ * fixed lookup for the rest of their 30-day life. Old entries are simply never
+ * read again and expire on their own.
+ */
+function deezerQueryKey(title: string, artist: string): string {
+  return `deezer:q2:${titleKey(title)}|${fold(artist)}`;
+}
+
+/**
  * A candidate that only has a title and an artist (Last.fm, ListenBrainz) gets
  * its ISRC from Deezer's keyless search so it can be matched exactly instead
  * of by text. Cached under the same key the Deezer provider uses.
  */
 async function enrichFromDeezer(c: Candidate, lead: string, ctx: MatchContext): Promise<void> {
-  const key = `deezer:q:${titleKey(c.titleShort || c.title)}|${fold(lead)}`;
+  const key = deezerQueryKey(c.titleShort || c.title, lead);
   try {
     let found = await spotifyTrackCache.get(key);
     if (found === undefined) {
