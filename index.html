@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lineupify — Turn lineups into playlists</title>
+  <meta name="description" content="Lineupify is a local MCP server that turns festival lineups, moods, artists, playlists and taste into reviewable music drafts and Spotify playlists.">
+  <meta name="theme-color" content="#0d1117">
+  <meta property="og:title" content="Lineupify — Turn lineups into playlists">
+  <meta property="og:description" content="A local MCP server for building reviewable playlists from lineups, moods, artists and musical taste.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://github.com/SHREESHMAN/lineupify">
+  <meta property="og:image" content="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/lineupify.png">
+  <link rel="icon" href="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/lineupify.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { spotify: '#1ed760' },
+          boxShadow: {
+            soft: '0 24px 80px rgba(0,0,0,.32)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { background:#0d1117; color:#e6edf3; }
+    ::selection { background:#1ed760; color:#07110a; }
+    .grid-bg {
+      background-image: linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 72%);
+    }
+    .focus-ring:focus-visible { outline:2px solid #1ed760; outline-offset:4px; }
+    .card { background:rgba(17,22,28,.86); border:1px solid rgba(255,255,255,.09); }
+    .noise {
+      background-image: radial-gradient(rgba(255,255,255,.07) .6px, transparent .6px);
+      background-size: 5px 5px;
+      opacity:.18;
+    }
+    .poster {
+      background:
+        radial-gradient(circle at 78% 18%, rgba(30,215,96,.55), transparent 27%),
+        radial-gradient(circle at 18% 85%, rgba(112,255,181,.18), transparent 28%),
+        linear-gradient(145deg, #18231c 0%, #0b100d 58%, #050706 100%);
+    }
+    .wave span { display:block; width:3px; border-radius:999px; background:#1ed760; }
+    @media (prefers-reduced-motion: no-preference) {
+      .lift { transition: transform .2s ease, border-color .2s ease, background-color .2s ease; }
+      .lift:hover { transform:translateY(-3px); border-color:#484f58; background:#161b22; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+  </style>
+</head>
+
+<body class="font-sans antialiased">
+  <div class="fixed inset-0 -z-10 grid-bg"></div>
+
+  <header class="sticky top-0 z-50 border-b border-[#30363d]/80 bg-[#0d1117]/90 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
+      <a href="#top" class="focus-ring flex items-center gap-2.5 rounded-md" aria-label="Lineupify home">
+        <img src="https://raw.githubusercontent.com/SHREESHMAN/lineupify/main/assets/lineupify.png"
+             alt="Lineupify logo" width="32" height="32" class="h-8 w-8 rounded-lg">
+        <span class="font-semibold tracking-tight">Lineupify</span>
+      </a>
+
+      <nav class="hidden items-center gap-6 text-sm text-[#8b949e] md:flex" aria-label="Primary navigation">
+        <a class="focus-ring rounded" href="#features">Features</a>
+        <a class="focus-ring rounded" href="#workflow">How it works</a>
+        <a class="focus-ring rounded" href="#open-source">Open source</a>
+        <a class="focus-ring rounded" href="https://github.com/SHREESHMAN/lineupify">GitHub</a>
+      </nav>
+
+      <div class="hidden items-center gap-3 text-xs text-[#8b949e] lg:flex">
+        <span>Developed by</span>
+        <a class="focus-ring font-medium text-[#e6edf3] rounded" href="https://github.com/SHREESHMAN">SHREESHMAN</a>
+        <img src="https://github.com/SHREESHMAN.png?size=48" alt="SHREESHMAN GitHub avatar" width="24" height="24" loading="lazy" class="h-6 w-6 rounded-full border border-[#30363d]">
+      </div>
+
+      <a href="https://github.com/SHREESHMAN/lineupify" class="focus-ring rounded-lg border border-[#30363d] px-3 py-2 text-sm font-medium md:hidden">GitHub</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="relative overflow-hidden">
+      <div class="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-24 pt-20 lg:grid-cols-[1.05fr_.95fr] lg:pb-28 lg:pt-28">
+        <div>
+          <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-[#30363d] bg-[#161b22]/80 px-3 py-1.5 text-xs font-medium text-[#8b949e]">
+            <span class="h-1.5 w-1.5 rounded-full bg-spotify"></span>
+            Model Context Protocol Server
+          </div>
+          <h1 class="max-w-3xl text-5xl font-bold tracking-[-.045em] text-white sm:text-6xl lg:text-7xl">
+            Turn the lineup into the soundtrack.
+          </h1>
+          <p class="mt-6 max-w-2xl text-lg leading-8 text-[#8b949e]">
+            Lineupify turns festival lineups, moods, artists, songs, playlists and blended taste into transparent music drafts — then lets you review, edit and publish them to your own Spotify account.
+          </p>
+
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <a href="https://github.com/SHREESHMAN/lineupify"
+               class="focus-ring inline-flex items-center justify-center gap-2 rounded-lg bg-spotify px-5 py-3 font-semibold text-[#07110a] shadow-soft">
+              Clone repository
+              <span aria-hidden="true">→</span>
+            </a>
+            <a href="https://github.com/SHREESHMAN/lineupify#quick-start"
+               class="focus-ring inline-flex items-center justify-center gap-2 rounded-lg border border-[#30363d] bg-[#161b22] px-5 py-3 font-semibold text-[#e6edf3]">
+              Get started
+            </a>
+          </div>
+
+          <div class="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#8b949e]">
+            <span>Local-first</span><span>•</span><span>No Lineupify backend</span><span>•</span><span>No telemetry</span><span>•</span><span>MIT licensed</span>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="absolute -right-5 -top-7 hidden h-28 w-28 rounded-full border border-spotify/20 sm:block"></div>
+          <div class="absolute -bottom-8 -left-8 hidden h-20 w-20 rounded-full border border-spotify/10 sm:block"></div>
+
+          <div class="poster relative overflow-hidden rounded-[1.75rem] border border-white/10 p-6 shadow-soft">
+            <div class="noise pointer-events-none absolute inset-0"></div>
+            <div class="relative">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="text-[10px] font-semibold uppercase tracking-[.25em] text-spotify">LINEUP / 2026</div>
+                  <div class="mt-2 text-4xl font-black uppercase leading-[.88] tracking-[-.06em] text-white sm:text-5xl">Build<br>the set.</div>
+                </div>
+                <div class="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] uppercase tracking-widest text-white/60">MCP</div>
+              </div>
+
+              <div class="mt-12 grid grid-cols-2 gap-x-5 gap-y-2 border-y border-white/10 py-5 text-sm font-medium text-white/75">
+                <span>Fred again..</span><span>Jamie xx</span>
+                <span>Four Tet</span><span>Overmono</span>
+                <span>Bicep</span><span>Barry Can't Swim</span>
+              </div>
+
+              <div class="mt-6 rounded-2xl border border-white/10 bg-[#050706]/75 p-4 backdrop-blur">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-white/55">DRAFT PLAYLIST</span>
+                  <span class="text-xs text-spotify">27 tracks</span>
+                </div>
+                <div class="mt-4 space-y-3">
+                  <div class="flex items-center gap-3">
+                    <div class="grid h-9 w-9 place-items-center rounded-md bg-[#24342a] text-xs font-bold text-spotify">01</div>
+                    <div class="min-w-0 flex-1"><div class="truncate text-sm text-white">Delilah (pull me out of this)</div><div class="text-xs text-white/40">Fred again..</div></div>
+                    <div class="wave flex h-5 items-center gap-[3px]" aria-hidden="true"><span style="height:8px"></span><span style="height:15px"></span><span style="height:11px"></span><span style="height:19px"></span><span style="height:7px"></span></div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="grid h-9 w-9 place-items-center rounded-md bg-[#24342a] text-xs font-bold text-spotify">02</div>
+                    <div class="min-w-0 flex-1"><div class="truncate text-sm text-white">Baddy On The Floor</div><div class="text-xs text-white/40">Jamie xx, Honey Dijon</div></div>
+                    <div class="wave flex h-5 items-center gap-[3px]" aria-hidden="true"><span style="height:14px"></span><span style="height:7px"></span><span style="height:18px"></span><span style="height:12px"></span><span style="height:9px"></span></div>
+                  </div>
+                  <div class="flex items-center gap-3 opacity-60">
+                    <div class="grid h-9 w-9 place-items-center rounded-md bg-[#24342a] text-xs font-bold text-spotify">03</div>
+                    <div class="min-w-0 flex-1"><div class="truncate text-sm text-white">Track candidate</div><div class="text-xs text-white/40">Matched from your seeds</div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-5 flex items-center justify-between text-xs">
+                <span class="text-white/40">review → reorder → publish</span>
+                <span class="font-medium text-spotify">Spotify</span>
+              </div>
+            </div>
+          </div>
+        </div>        </div>
+      </div>
+    </section>
+
+    <section class="border-y border-[#30363d] bg-[#0d1117]/80">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-3 px-5 py-7 text-sm text-[#8b949e]">
+        <span class="text-xs font-semibold uppercase tracking-[.18em] text-spotify">Your stack</span>
+        <span>Claude Desktop</span><span>Claude Code</span><span>Cursor</span><span>Spotify</span><span>Deezer</span><span>Last.fm</span>
+      </div>
+    </section>
+
+    <section id="features" class="mx-auto max-w-6xl px-5 py-24">
+      <div class="max-w-2xl">
+        <p class="text-sm font-semibold text-spotify">WHY LINEUPIFY</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Music discovery, with the controls left to you.</h2>
+        <p class="mt-4 text-[#8b949e]">The server keeps generation inspectable: inputs become artist seeds, candidates are ranked and matched, filters are applied, and the result stays a draft until you choose to publish.</p>
+      </div>
+
+      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <article class="card lift rounded-xl p-5 border-t-2 border-t-spotify/50">
+          <div class="mb-5 inline-flex rounded-lg border border-[#30363d] p-2 text-spotify" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5h16M4 12h16M4 19h10"/><path d="M8 3v4M15 10v4M11 17v4"/></svg>
+          </div>
+          <h3 class="font-semibold">Lineups & seeds</h3>
+          <p class="mt-2 text-sm leading-6 text-[#8b949e]">Start with a festival poster, lineup text, mood, genre, artist, song, chart, country, playlist or taste profile.</p>
+        </article>
+        <article class="card lift rounded-xl p-5 border-t-2 border-t-white/10">
+          <div class="mb-5 inline-flex rounded-lg border border-[#30363d] p-2 text-spotify" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><path d="M8 10c2-1 6-1 8 0M8 13c2-1 5-1 7 0M9 16c1-.5 3-.5 5 0"/></svg>
+          </div>
+          <h3 class="font-semibold">Exact matching</h3>
+          <p class="mt-2 text-sm leading-6 text-[#8b949e]">Rank candidate songs from available music data, then match them to Spotify by ISRC with text search as fallback.</p>
+        </article>
+        <article class="card lift rounded-xl p-5 border-t-2 border-t-white/10">
+          <div class="mb-5 inline-flex rounded-lg border border-[#30363d] p-2 text-spotify" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 6h12v12H6z"/><path d="M9 10h6M9 14h4"/><path d="m16 17 3 3"/></svg>
+          </div>
+          <h3 class="font-semibold">Editable drafts</h3>
+          <p class="mt-2 text-sm leading-6 text-[#8b949e]">Inspect tracks and unresolved artists, swap or remove items, reorder, undo, then publish only when the draft is right.</p>
+        </article>
+        <article class="card lift rounded-xl p-5 border-t-2 border-t-spotify/30">
+          <div class="mb-5 inline-flex rounded-lg border border-[#30363d] p-2 text-spotify" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8"/></svg>
+          </div>
+          <h3 class="font-semibold">Local by design</h3>
+          <p class="mt-2 text-sm leading-6 text-[#8b949e]">Runs on your machine with your own Spotify app. There is no Lineupify server and no telemetry.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="workflow" class="border-y border-[#30363d] bg-[#161b22]/40">
+      <div class="mx-auto max-w-6xl px-5 py-24">
+        <div class="max-w-2xl">
+          <p class="text-sm font-semibold text-spotify">HOW IT WORKS</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">From a rough idea to a finished set.</h2>
+        </div>
+        <div class="mt-12 grid gap-4 md:grid-cols-4">
+          <div class="relative card rounded-xl p-5"><span class="text-xs text-spotify">01</span><h3 class="mt-4 font-semibold">Give it a seed</h3><p class="mt-2 text-sm leading-6 text-[#8b949e]">Describe what you want, attach a lineup, name an artist or point to a playlist.</p></div>
+          <div class="relative card rounded-xl p-5"><span class="text-xs text-spotify">02</span><h3 class="mt-4 font-semibold">Build the artist list</h3><p class="mt-2 text-sm leading-6 text-[#8b949e]">Lineupify expands seeds and resolves artists using Deezer, Last.fm and Spotify where appropriate.</p></div>
+          <div class="relative card rounded-xl p-5"><span class="text-xs text-spotify">03</span><h3 class="mt-4 font-semibold">Shape the draft</h3><p class="mt-2 text-sm leading-6 text-[#8b949e]">Rank tracks, match them, dedupe, filter, order and checkpoint the draft to disk.</p></div>
+          <div class="relative card rounded-xl p-5"><span class="text-xs text-spotify">04</span><h3 class="mt-4 font-semibold">Review & publish</h3><p class="mt-2 text-sm leading-6 text-[#8b949e]">Edit what you want, then publish to Spotify or export the draft as CSV, M3U, links, text or Markdown.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="open-source" class="mx-auto max-w-6xl px-5 py-24">
+      <div class="grid gap-10 rounded-2xl border border-[#30363d] bg-[#161b22]/70 p-7 md:grid-cols-[1fr_auto] md:p-10">
+        <div>
+          <p class="text-sm font-semibold text-spotify">OPEN SOURCE</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight">Built by <a class="focus-ring rounded text-spotify" href="https://github.com/SHREESHMAN">SHREESHMAN</a>.</h2>
+          <p class="mt-4 max-w-2xl leading-7 text-[#8b949e]">Lineupify is published as an MIT-licensed npm package and developed in the open. Read the implementation, inspect the MCP tools, contribute improvements, or run it locally.</p>
+        </div>
+        <div class="flex flex-col gap-3 self-center sm:flex-row md:flex-col">
+          <a class="focus-ring rounded-lg bg-spotify px-5 py-3 text-center font-semibold text-[#07110a]" href="https://github.com/SHREESHMAN/lineupify">View repository</a>
+          <a class="focus-ring rounded-lg border border-[#30363d] px-5 py-3 text-center font-semibold" href="https://github.com/SHREESHMAN/lineupify/blob/main/CONTRIBUTING.md">Contribute</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-6xl px-5 pb-24">
+      <div class="relative overflow-hidden rounded-2xl border border-[#30363d] bg-[#161b22] px-6 py-14 text-center sm:px-12">
+        <div class="absolute inset-x-0 top-0 h-px bg-spotify/70"></div>
+        <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">There’s a playlist hiding in every lineup.</h2>
+        <p class="mx-auto mt-4 max-w-xl text-[#8b949e]">Clone Lineupify, connect your own music accounts, and let your MCP host build a draft you can inspect before it reaches Spotify.</p>
+        <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <a href="https://github.com/SHREESHMAN/lineupify#quick-start" class="focus-ring rounded-lg bg-spotify px-5 py-3 font-semibold text-[#07110a]">Get started</a>
+          <a href="https://github.com/SHREESHMAN/lineupify" class="focus-ring rounded-lg border border-[#30363d] px-5 py-3 font-semibold">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-[#30363d]">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-8 text-sm text-[#8b949e] sm:flex-row sm:items-center sm:justify-between">
+      <div>© 2026 Lineupify · MIT License</div>
+      <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer navigation">
+        <a class="focus-ring rounded" href="https://github.com/SHREESHMAN/lineupify">Repository</a>
+        <a class="focus-ring rounded" href="https://github.com/SHREESHMAN/lineupify/issues">Report an issue</a>
+        <a class="focus-ring rounded" href="https://modelcontextprotocol.io/">About MCP</a>
+        <a class="focus-ring rounded" href="https://www.npmjs.com/package/lineupify-mcp">npm</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
