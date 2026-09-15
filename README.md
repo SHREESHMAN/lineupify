@@ -13,6 +13,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
+<p align="center"><a href="https://shreeshman.github.io/lineupify/"><strong>lineupify on the web &rarr;</strong></a></p>
+
 Lineupify is an [MCP](https://modelcontextprotocol.io) server for Claude Desktop, Claude Code, Cursor and any other MCP host. Paste a festival poster, describe a mood, name an artist or a song you like, point at a playlist, or blend two people's playlists. Lineupify finds the artists, picks their most popular songs, matches them exactly (by ISRC) and builds a draft you can review and edit before anything is published to Spotify. Everything runs on your machine; there is no Lineupify server and no telemetry.
 
 | | Spotify | Deezer mode |

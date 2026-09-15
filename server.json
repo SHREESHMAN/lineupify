@@ -2,6 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.SHREESHMAN/lineupify",
   "description": "Spotify playlists from a festival lineup, a genre, a song, a playlist or a blend. Own client ID.",
+  "websiteUrl": "https://shreeshman.github.io/lineupify/",
   "repository": {
     "url": "https://github.com/SHREESHMAN/lineupify",
     "source": "github"

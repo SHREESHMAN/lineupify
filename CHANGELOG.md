@@ -2,6 +2,12 @@
 
 All notable changes to `lineupify-mcp` are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- The project homepage is now the landing page at <https://shreeshman.github.io/lineupify/> rather than the README anchor: npm, the Claude Desktop bundle and the MCP Registry entry all point there.
+
 ## 0.6.0 - 2026-09-10
 
 ### Added

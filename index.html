@@ -59,6 +59,12 @@ p{margin:0}
 .muted{color:var(--muted)}
 .mono{font-family:var(--mono)}
 .eyebrow{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--violet)}
+.eyebrow.t{color:var(--teal)}
+.eyebrow.c{color:var(--coral)}
+/* One accent hue per idea, carried from its label through its border and tint. */
+.accent{background:linear-gradient(94deg,var(--violet),var(--coral));-webkit-background-clip:text;background-clip:text;color:transparent}
+.kicker{display:block;font-size:11.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;margin-bottom:13px}
+.t-teal{color:var(--teal)}.t-violet{color:var(--violet)}.t-coral{color:var(--coral)}
 
 /* header */
 header{position:sticky;top:0;z-index:40;background:rgba(13,11,20,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
@@ -127,12 +133,25 @@ section{padding:92px 0}
 .card{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:26px}
 .card h3{font-size:19px;font-weight:700;margin-bottom:10px}
 .card p{color:var(--muted);font-size:15px}
-.card .top{height:2px;width:34px;border-radius:2px;margin-bottom:20px}
-pre{font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--muted);background:#0a0810;border:1px solid var(--line);border-radius:11px;padding:15px;margin:18px 0 0;overflow-x:auto;white-space:pre}
+.card .top{height:3px;width:46px;border-radius:3px;margin-bottom:22px}
+.card.teal{border-color:rgba(95,211,174,.30);background:linear-gradient(162deg,rgba(95,211,174,.085),rgba(255,255,255,.02) 58%)}
+.card.violet{border-color:rgba(155,124,240,.32);background:linear-gradient(162deg,rgba(155,124,240,.095),rgba(255,255,255,.02) 58%)}
+.card.coral{border-color:rgba(255,138,120,.30);background:linear-gradient(162deg,rgba(255,138,120,.085),rgba(255,255,255,.02) 58%)}
+.card.teal:hover{border-color:rgba(95,211,174,.55)}
+.card.violet:hover{border-color:rgba(155,124,240,.58)}
+.card.coral:hover{border-color:rgba(255,138,120,.55)}
+pre{font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--muted);background:rgba(4,3,8,.55);border:1px solid var(--line);border-radius:11px;padding:15px;margin:18px 0 0;overflow-x:auto;white-space:pre}
+pre .c{color:var(--coral)}
 pre .u{color:var(--ink)}
 pre .g{color:var(--teal)}
 pre .v{color:var(--violet)}
 .alt{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+/* A different hue washing each band, so the page is not one flat grey scroll. */
+.glow{position:relative;isolation:isolate}
+.glow::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+.glow.g-violet::after{background:radial-gradient(720px 420px at 82% 0%,rgba(155,124,240,.16),transparent 64%)}
+.glow.g-teal::after{background:radial-gradient(680px 420px at 12% 6%,rgba(95,211,174,.13),transparent 62%)}
+.glow.g-coral::after{background:radial-gradient(700px 440px at 88% 92%,rgba(255,138,120,.13),transparent 62%)}
 
 /* steps */
 .step{display:flex;gap:18px;align-items:flex-start}
@@ -142,14 +161,16 @@ pre .v{color:var(--violet)}
 
 /* limits */
 .limit{padding:22px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:230px 1fr;gap:28px}
-.limit h3{font-size:16px;font-weight:700}
+.limit h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:11px}
+.limit h3::before{content:"";flex:0 0 auto;width:9px;height:9px;border-radius:3px;background:currentColor}
 .limit p{color:var(--muted);font-size:15px}
 @media(max-width:760px){.limit{grid-template-columns:1fr;gap:8px}}
 
 /* docs */
-.doc{display:block;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:22px;color:var(--ink)}
+.doc{display:block;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:22px;color:var(--ink);position:relative;overflow:hidden}
+.doc::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:currentColor;opacity:.85}
 .doc:hover{border-color:var(--line2);color:var(--ink)}
-.doc strong{display:block;font-size:17px;font-weight:700;margin-bottom:7px}
+.doc strong{display:block;font-size:17px;font-weight:700;margin-bottom:7px;color:var(--ink)}
 .doc span{color:var(--muted);font-size:14.5px}
 
 /* final */
@@ -208,7 +229,7 @@ footer{border-top:1px solid var(--line);padding:44px 0 56px;font-size:14.5px;col
   <div class="wrap cols">
     <div>
       <span class="pill"><span class="dot"></span>MCP server · Claude Desktop, Claude Code, Cursor</span>
-      <h1>Say what you want to hear.</h1>
+      <h1>Say what you want to <span class="accent">hear.</span></h1>
       <p class="lede">A festival poster, a mood, a song you like or a friend&rsquo;s playlist. Lineupify finds the artists, picks the songs and hands you a draft you can read and edit. Nothing is written to Spotify until you say publish.</p>
 
       <div class="cmd">
@@ -244,49 +265,49 @@ footer{border-top:1px solid var(--line);padding:44px 0 56px;font-size:14.5px;col
   </div>
 </section>
 
-<section id="ways" class="alt">
+<section id="ways" class="alt glow g-violet">
   <div class="wrap">
     <div class="head">
-      <p class="eyebrow">Where a playlist comes from</p>
+      <p class="eyebrow t">Where a playlist comes from</p>
       <h2>Four ways in, one draft out.</h2>
       <p>Your assistant turns what you said into artists and seeds. Lineupify resolves each artist, ranks their songs with Deezer&rsquo;s public data and optionally Last.fm, then matches every track to Spotify by ISRC so you get the exact recording.</p>
     </div>
 
     <div class="grid g2">
-      <article class="card">
-        <div class="top" style="background:var(--coral)"></div>
-        <h3>A festival poster</h3>
-        <p>Paste the text or attach a photo. Names are sorted into headliner, sub and undercard, and each tier gets its own number of songs. Dates, stages and ticket lines are dropped.</p>
+      <article class="card coral">
+        <span class="kicker t-coral">A festival poster</span>
+        <h3>Paste it, or photograph it.</h3>
+        <p>Names are sorted into headliner, sub and undercard, and each tier gets its own number of songs. Dates, stages and ticket lines are dropped.</p>
         <pre><span class="u">Artists 9</span> (resolved 8 · unresolved 1)
 <span class="u">Tracks 27</span> · 1h42m · via <span class="g">isrc 25</span> / text 2
 Tiers headliner 2×5 · sub 3×3 · undercard 4×2
-Not found (1): DJ Fluffhead</pre>
+<span class="c">Not found (1): DJ Fluffhead</span></pre>
       </article>
 
-      <article class="card">
-        <div class="top" style="background:var(--teal)"></div>
-        <h3>A sentence</h3>
-        <p>A mood, a genre, a decade, a country, or an artist you like. Say how long it should be and whether it should stay clean; both are filters, not suggestions.</p>
+      <article class="card teal">
+        <span class="kicker t-teal">A sentence</span>
+        <h3>A mood, a genre, a decade.</h3>
+        <p>Or a country, or an artist you like. Say how long it should be and whether it should stay clean; both are filters, not suggestions.</p>
         <pre><span class="v">&ldquo;Rainy Sunday jazz for cooking,</span>
 <span class="v"> about an hour, nothing explicit&rdquo;</span>
 
-<span class="u">Tracks 10</span> · 52:10 · clean only · private</pre>
+<span class="u">Tracks 10</span> · 52:10 · <span class="g">clean only</span> · private</pre>
       </article>
 
-      <article class="card">
-        <div class="top" style="background:var(--violet)"></div>
-        <h3>A song you already love</h3>
-        <p>&ldquo;More like this one, different artists.&rdquo; Neighbours come from Last.fm and ListenBrainz co-listening data at the recording level, not from a genre guess.</p>
+      <article class="card violet">
+        <span class="kicker t-violet">A song you already love</span>
+        <h3>More like this, other artists.</h3>
+        <p>Neighbours come from Last.fm and ListenBrainz co-listening data at the recording level, not from a genre guess.</p>
         <pre><span class="v">&ldquo;Songs like Ritviz – Udd Gaye,</span>
 <span class="v"> other artists only&rdquo;</span>
 
 seed <span class="g">similar_songs</span> · pinned exact recordings</pre>
       </article>
 
-      <article class="card">
-        <div class="top" style="background:var(--coral)"></div>
-        <h3>Two playlists</h3>
-        <p>Yours and a friend&rsquo;s. See what they share and why, then get one mix built from the artists several of you already like, plus their neighbours.</p>
+      <article class="card coral">
+        <span class="kicker t-coral">Two playlists</span>
+        <h3>Yours and a friend&rsquo;s.</h3>
+        <p>See what they share and why, then get one mix built from the artists several of you already like, plus their neighbours.</p>
         <pre><span class="v">&ldquo;What do our playlists share?</span>
 <span class="v"> Then make us a mix.&rdquo;</span>
 
@@ -296,10 +317,10 @@ seed <span class="g">blend</span> · 2 to 4 sources</pre>
   </div>
 </section>
 
-<section id="review">
+<section id="review" class="glow g-teal">
   <div class="wrap">
     <div class="head">
-      <p class="eyebrow">The part that matters</p>
+      <p class="eyebrow c">The part that matters</p>
       <h2>Nothing is written to Spotify until you say publish.</h2>
       <p>An assistant with write access to your music library is only comfortable if you see the work first. Every build stops at a draft on your disk.</p>
     </div>
@@ -317,48 +338,48 @@ seed <span class="g">blend</span> · 2 to 4 sources</pre>
   </div>
 </section>
 
-<section id="how" class="alt">
+<section id="how" class="alt glow g-coral">
   <div class="wrap">
     <div class="head">
-      <p class="eyebrow">How it works</p>
+      <p class="eyebrow t">How it works</p>
       <h2>Readable at every step.</h2>
       <p>No black box in the middle. Each stage leaves something you can inspect, and a build that is interrupted picks up where it stopped.</p>
     </div>
     <div class="grid g4">
-      <article class="card"><div class="top" style="background:var(--grad)"></div><h3>1 · Seeds</h3><p>Poster text, a mood, a genre, a song, a chart, a country, a playlist or your own taste become a list of artists with tiers.</p></article>
-      <article class="card"><div class="top" style="background:var(--grad)"></div><h3>2 · Resolve</h3><p>Each artist is found on Deezer, then Last.fm if you added a key, then Spotify. Collaborations are split. Misses are recorded.</p></article>
-      <article class="card"><div class="top" style="background:var(--grad)"></div><h3>3 · Match</h3><p>Songs are ranked, matched to Spotify by ISRC, deduplicated by recording, filtered by year, tempo or explicitness, then ordered.</p></article>
-      <article class="card"><div class="top" style="background:var(--grad)"></div><h3>4 · Review</h3><p>The draft is checkpointed to disk after every artist, so a quota, a closed laptop or a dropped connection pauses it instead of losing it.</p></article>
+      <article class="card teal"><span class="kicker t-teal">Step one</span><h3>Seeds</h3><p>Poster text, a mood, a genre, a song, a chart, a country, a playlist or your own taste become a list of artists with tiers.</p></article>
+      <article class="card violet"><span class="kicker t-violet">Step two</span><h3>Resolve</h3><p>Each artist is found on Deezer, then Last.fm if you added a key, then Spotify. Collaborations are split. Misses are recorded.</p></article>
+      <article class="card coral"><span class="kicker t-coral">Step three</span><h3>Match</h3><p>Songs are ranked, matched to Spotify by ISRC, deduplicated by recording, filtered by year, tempo or explicitness, then ordered.</p></article>
+      <article class="card teal"><span class="kicker t-teal">Step four</span><h3>Review</h3><p>The draft is checkpointed to disk after every artist, so a quota, a closed laptop or a dropped connection pauses it instead of losing it.</p></article>
     </div>
   </div>
 </section>
 
-<section id="limits">
+<section id="limits" class="glow g-violet">
   <div class="wrap">
     <div class="head">
-      <p class="eyebrow">Worth knowing first</p>
+      <p class="eyebrow t">Worth knowing first</p>
       <h2>The limits, before you install.</h2>
       <p>Most of these come from Spotify&rsquo;s terms for new developer apps rather than from Lineupify. They are the reason it is built the way it is.</p>
     </div>
 
-    <div class="limit"><h3>Development Mode</h3><p>A new Spotify app serves at most five people and its owner must have Premium. Production access is granted only to registered businesses with 250,000 monthly users, so everyone brings their own free app. Add up to four other people under <em>User Management</em> in the dashboard.</p></div>
-    <div class="limit"><h3>Ranking without Spotify</h3><p>Spotify removed artist top tracks, recommendations, popularity and audio features for new apps. Songs are ranked with Deezer&rsquo;s public API and optionally Last.fm, then matched back to Spotify by ISRC. Very small or brand-new acts may be missing from Deezer and show up as unresolved.</p></div>
-    <div class="limit"><h3>Deezer is read-only</h3><p>Deezer stopped issuing API credentials to new developers in 2025, so Deezer drafts are exported rather than published. Reads, ranking, related artists and tempo stay keyless and unaffected.</p></div>
-    <div class="limit"><h3>Logins expire</h3><p>Spotify refresh tokens die six months after you sign in; <code class="mono">status</code> warns you thirty days out. The daily request quota pauses a build rather than failing it, and the next <code class="mono">get_draft</code> resumes from the last checkpoint.</p></div>
+    <div class="limit"><h3 class="t-coral">Development Mode</h3><p>A new Spotify app serves at most five people and its owner must have Premium. Production access is granted only to registered businesses with 250,000 monthly users, so everyone brings their own free app. Add up to four other people under <em>User Management</em> in the dashboard.</p></div>
+    <div class="limit"><h3 class="t-teal">Ranking without Spotify</h3><p>Spotify removed artist top tracks, recommendations, popularity and audio features for new apps. Songs are ranked with Deezer&rsquo;s public API and optionally Last.fm, then matched back to Spotify by ISRC. Very small or brand-new acts may be missing from Deezer and show up as unresolved.</p></div>
+    <div class="limit"><h3 class="t-violet">Deezer is read-only</h3><p>Deezer stopped issuing API credentials to new developers in 2025, so Deezer drafts are exported rather than published. Reads, ranking, related artists and tempo stay keyless and unaffected.</p></div>
+    <div class="limit"><h3 class="t-coral">Logins expire</h3><p>Spotify refresh tokens die six months after you sign in; <code class="mono">status</code> warns you thirty days out. The daily request quota pauses a build rather than failing it, and the next <code class="mono">get_draft</code> resumes from the last checkpoint.</p></div>
   </div>
 </section>
 
-<section id="docs" class="alt">
+<section id="docs" class="alt glow g-teal">
   <div class="wrap">
     <div class="head">
-      <p class="eyebrow">Documentation</p>
+      <p class="eyebrow c">Documentation</p>
       <h2>Everything is written down.</h2>
     </div>
     <div class="grid g4">
-      <a class="doc" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/setup-spotify.md"><strong>Spotify app setup</strong><span>Every field, with screenshots, and what each permission is for.</span></a>
-      <a class="doc" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/hosts.md"><strong>Hosts</strong><span>Claude Desktop, Claude Code, Cursor and any other MCP host.</span></a>
-      <a class="doc" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/reference.md"><strong>Reference</strong><span>Every tool, seed, option, edit operation and config key.</span></a>
-      <a class="doc" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/troubleshooting.md"><strong>Troubleshooting</strong><span>Every error code, what caused it and what to do next.</span></a>
+      <a class="doc t-teal" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/setup-spotify.md"><strong>Spotify app setup</strong><span>Every field, with screenshots, and what each permission is for.</span></a>
+      <a class="doc t-violet" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/hosts.md"><strong>Hosts</strong><span>Claude Desktop, Claude Code, Cursor and any other MCP host.</span></a>
+      <a class="doc t-coral" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/reference.md"><strong>Reference</strong><span>Every tool, seed, option, edit operation and config key.</span></a>
+      <a class="doc t-teal" href="https://github.com/SHREESHMAN/lineupify/blob/main/docs/troubleshooting.md"><strong>Troubleshooting</strong><span>Every error code, what caused it and what to do next.</span></a>
     </div>
   </div>
 </section>
@@ -366,7 +387,7 @@ seed <span class="g">blend</span> · 2 to 4 sources</pre>
 <section>
   <div class="wrap">
     <div class="final">
-      <h2>There is a playlist hiding in every lineup.</h2>
+      <h2>There is a playlist hiding in <span class="accent">every lineup.</span></h2>
       <p>Install it, point your assistant at a poster, and see what comes back. It costs nothing and it publishes nothing without you.</p>
       <div class="cmd">
         <code><span class="prompt">$</span> npx -y lineupify-mcp init</code>
