@@ -26,3 +26,6 @@ Thumbs.db
 notes/
 mcp-publisher.exe
 mcp-publisher
+
+# Playwright MCP scratch output
+.playwright-mcp/
